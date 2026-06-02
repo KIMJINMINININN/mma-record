@@ -1,29 +1,32 @@
 # TodoList — MMA 트레이닝 저널 (다음 작업 체크리스트)
 
-> 브랜치 **`feature/mma-record`** · 갱신 **2026-06-01 (EOD)** · *다음 세션에서 바로 이어서 시작하는 용도*
-> **원칙: Supabase/Vercel 실제 프로비저닝은 맨 마지막.** 그 전까지는 코드·파일만 만든다.
+> 브랜치 **`main`** (분리된 `mma-record` 레포) · 갱신 **2026-06-02 (PM)** · *다음 세션에서 바로 이어서 시작하는 용도*
+> **상태: 🚀 프로덕션 라이브 + 테스트 826 green.** (인프라 프로비저닝·배포 완료 — 더 이상 "코드만" 단계 아님.)
 > SSoT 문서: `docs/mma/PRD.md` · `docs/mma/Design.md` · `docs/mma/Develop.md`
 > 오늘 작업 상세: **`docs/mma/20260601_app_work.md`**
 
 ---
 
-## 🟢 내일 시작점 (여기부터)
+## 🟢 다음 시작점 (여기부터)
 
-**어디까지 왔나(2026-06-02):** 인프라 점등(실 Supabase 프로젝트, `AUTH_ENABLED=true`) + 프리셋 0016 라이브. **모든 P0 기능 코드 완성** — 핵심 루프 + 미디어 + 잔손질 전부 라이브:
-캘린더 · 기술(목록/상세/생성/편집) · 프로필/랭크 · 태그(attach+필터+표시) · 세션↔다룬기술(+그날메모) · 세션 미디어 · 기술 미디어 · 쿼리 에러 토스트 · `/calendar?date=` 딥링크. 마지막 push = `67e05be`(+역참조 링크). 빌드/타입/린트/gitleaks 모두 green.
+**어디까지 왔나 (2026-06-02 PM):** 🚀 **프로덕션 라이브.** Vercel 배포 완료(Root Directory=`apps/web`) · 실 Supabase 연결 · 회원가입/로그인 동작 확인. P0 기능 전부 라이브 + **테스트 인프라 구축(826 통과)**. 게이트 전부 green(typecheck·lint·build·vitest·gitleaks). 마지막 push = `e0112f3`. 배포 절차/트러블슈팅 상세 = `docs/mma/VERCEL_DEPLOY.md`.
 
-**✅ 완료된 잔손질 (2026-06-02):**
-- ~~기술 미디어 영속화~~ ✅ `881704c`·`cf33741` — 생성/편집 유지·제거 재동기화 + 상세 표시.
-- ~~쿼리 에러 핸들링~~ ✅ `3db3cd8` — QueryCache 전역 onError 토스트(+재시도, queryHash dedupe, 서명URL 제외).
-- ~~다룬 기술 그날 메모 입력~~ ✅ `9e98ed7` — TechniquePicker 행별 day_memo input.
-- ~~/calendar?date= 딥링크~~ ✅ `67e05be` — page가 검증·remount key, screen이 초기 선택일 수용 + 역참조 세션 행 링크.
+**✅ 이번 세션 완료 (2026-06-02 PM):**
+- ~~Vercel 배포~~ ✅ `84b1059` — 모노레포 빌드 실패(pnpm v10이 `apps/web`에서 워크스페이스 루트를 못 찾음 → `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`)를 `apps/web/vercel.json`(`cd ../.. && pnpm install` · `cd ../.. && pnpm --filter @the-others/web build`)으로 해결. env 4개 + Supabase Auth URL + 이메일 가입 허용 점등.
+- ~~CSS 전역 깨짐~~ ✅ `176b62d` — Tailwind v4 granular import에 cascade `@layer` 순서 미선언 → base 리셋이 utilities를 이김. `@layer theme,base,components,utilities;` 선언 + 떠돌던 리셋을 `@layer base`로 이동.
+- ~~로직 단위 테스트 417~~ ✅ `823a69b` (Vitest node, 순수함수/zod). ~~컴포넌트 테스트 404~~ ✅ `569ae17` (RTL: XSS·칩/배지·a11y). **dual-React**(mobile 19.1 ↔ web 19.2 hoist 충돌) 휴대성 = `scripts/link-test-react.mjs`(test 전 멱등 심링크, `pnpm test`가 자동 실행).
+- ~~e2e 하니스~~ ✅ `b651ecd` — Playwright 스모크(로그인→세션 기록→캘린더 반영). 자격증명 없으면 graceful skip(실행 검증 완료).
+- ~~a11y/HTML 4건~~ ✅ `2811e59` — TagChip 버튼 중첩 · DisciplineChip dot `sr-only` · EmptyState heading(`titleAs`) · TagInput `aria-controls` 상시.
+- ~~문서~~ ✅ `ad6f0ac` — 루트 `README.md` + `docs/mma/VERCEL_DEPLOY.md` 런북.
+- git 신원: repo-local을 personal(`KIMJINMINININN`, noreply)로 고정 — 공개 미러에 회사 이메일 유출 방지.
+- (이전 오전 세션: 기술 미디어 영속화 `881704c`·`cf33741` · 쿼리 에러 토스트 `3db3cd8` · 그날 메모 `9e98ed7` · `/calendar?date=` 딥링크 `67e05be` — P0 잔손질 완료.)
 
-**다음 할 일 — 🟥 인프라 마무리(코드 잔손질 없음, 사장님 액션 위주):**
-1. **Vercel 배포(⑥)** — 새 Vercel 프로젝트 + env(NEXT_PUBLIC_SUPABASE_*, SUPABASE_SECRET_KEY, NEXT_PUBLIC_AUTH_ENABLED=true 등) + Supabase Auth site_url/redirect에 Vercel 도메인 등록.
-2. **모바일** `EXPO_PUBLIC_CLIENT_URL`을 실 Vercel 도메인으로(현재 로컬 dev URL).
-3. (선택) 썸네일 생성(T2)·독립 레포 추출 등 P1.
+**다음 할 일:**
+1. **e2e 실런** — 전용 테스트 계정 생성 → `apps/web/.env.test`(gitignore)에 `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` 입력 → `pnpm web e2e`. 하니스는 완료, 계정만 있으면 실제 로그인→세션→캘린더 플로우 검증(셀렉터 미스매치 시 보정).
+2. **모바일** `apps/mobile/config/env.ts`의 `CLIENT_URL`을 실 Vercel 도메인으로(또는 `EXPO_PUBLIC_CLIENT_URL` 오버라이드) + 웹측 로그인/로그아웃 시 `AUTH_*` postMessage(§7).
+3. (P1, 선택) 썸네일 생성(T2) · 유튜브 검색 API · **컴포넌트 테스트 HARD군**(SessionEditorForm · TechniqueForm · TechniqueDetailView 등 폼/쿼리 상태, 라우터·react-query 모킹 필요) · e2e를 P0 전반으로 확장.
 
-**재개 명령:** 코드는 기능 완성 단계. 다음은 인프라(Vercel) — 사장님 대시보드 작업 위주. 새 기능/수정 있으면 `git log --oneline -8` 확인 후 시작.
+**재개 명령:** 프로덕션 라이브 + 테스트 826 green, 전부 push 완료(`e0112f3`). `git log --oneline -10` 확인. 유일한 미완 = **e2e 실런(테스트 계정 필요)**.
 
 ---
 
