@@ -65,7 +65,7 @@ export function DisciplineChip({
     discipline === 'mma' ? `color-mix(in srgb, ${meta.colorDark}, white 10%)` : meta.colorDark;
   const selectedFill = `light-dark(${meta.color}, ${selectedFillDark})`;
 
-  // dot — 캘린더 셀용. 라벨 없이 색+점 형태로만 식별, aria-label로 보강.
+  // dot — 캘린더 셀용. 색+점 형태 + sr-only 텍스트로 색약 대응(F9-AC4).
   if (size === 'dot') {
     return (
       <span
@@ -74,7 +74,9 @@ export function DisciplineChip({
         title={meta.label}
         className={`inline-block size-1.5 shrink-0 rounded-full${className ? ` ${className}` : ''}`}
         style={{ backgroundColor: disc }}
-      />
+      >
+        <span className="sr-only">{meta.label}</span>
+      </span>
     );
   }
 

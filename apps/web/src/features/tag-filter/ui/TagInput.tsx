@@ -208,26 +208,26 @@ export function TagInput({
             className={INPUT_BASE}
             role="combobox"
             aria-expanded={dropdownOpen}
-            aria-controls={dropdownOpen ? listboxId : undefined}
+            aria-controls={listboxId}
             aria-autocomplete="list"
             aria-activedescendant={activeDescendant}
             aria-label={label ? undefined : (placeholder ?? '태그')}
             aria-labelledby={label ? labelId : undefined}
           />
 
-          {dropdownOpen && (
-            <ul
-              id={listboxId}
-              role="listbox"
-              aria-label={label ?? '태그 추천'}
-              className={[
-                'absolute left-0 top-[calc(100%+4px)] z-10 w-max min-w-full max-w-64',
-                'flex flex-col gap-0.5 p-1',
-                'rounded-xs border border-[var(--border-default)] bg-[var(--surface-raised)]',
-                'shadow-[var(--shadow-e3)]',
-                'max-h-56 overflow-auto',
-              ].join(' ')}
-            >
+          <ul
+            id={listboxId}
+            role="listbox"
+            aria-label={label ?? '태그 추천'}
+            hidden={!dropdownOpen}
+            className={[
+              'absolute left-0 top-[calc(100%+4px)] z-10 w-max min-w-full max-w-64',
+              'flex flex-col gap-0.5 p-1',
+              'rounded-xs border border-[var(--border-default)] bg-[var(--surface-raised)]',
+              'shadow-[var(--shadow-e3)]',
+              'max-h-56 overflow-auto',
+            ].join(' ')}
+          >
               {options.map((opt, i) => {
                 const active = i === activeIndex;
                 return (
@@ -266,8 +266,7 @@ export function TagInput({
                   </li>
                 );
               })}
-            </ul>
-          )}
+          </ul>
         </div>
       </div>
 

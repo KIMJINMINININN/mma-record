@@ -112,20 +112,41 @@ describe('TagChip', () => {
     });
   });
 
-  describe('removable + clickable: stopPropagation', () => {
-    // When both removable and onClick are given, the component renders:
-    //   <button onClick={chip-toggle}> ... <button onClick={handleRemove}> </button> </button>
-    // This is a nested-button HTML bug in the source component.
-    // jsdom does NOT collapse the nesting, so both buttons exist in the DOM.
-    // We test stopPropagation by checking that only onRemove fires, not onClick.
-    it('clicking remove button calls onRemove and NOT onClick (stopPropagation)', async () => {
+  describe('removable + clickable: no nested buttons, correct event routing', () => {
+    it('root is a <span> (not a <button>) when both removable and onClick are set', () => {
+      const { container } = render(
+        <TagChip label="guard" removable onRemove={() => {}} onClick={() => {}} />,
+      );
+      const root = container.firstElementChild;
+      expect(root!.tagName).toBe('SPAN');
+    });
+
+    it('both toggle button and remove button are queryable', () => {
+      const { container } = render(
+        <TagChip label="guard" removable onRemove={() => {}} onClick={() => {}} />,
+      );
+      const toggleBtn = container.querySelector('button[aria-pressed]');
+      const removeBtn = container.querySelector('button[aria-label="태그 guard 제거"]');
+      expect(toggleBtn).not.toBeNull();
+      expect(removeBtn).not.toBeNull();
+    });
+
+    it('remove button is NOT a descendant of the toggle button (no nested <button>)', () => {
+      const { container } = render(
+        <TagChip label="guard" removable onRemove={() => {}} onClick={() => {}} />,
+      );
+      const toggleBtn = container.querySelector('button[aria-pressed]') as HTMLElement;
+      const nestedRemove = toggleBtn.querySelector('button[aria-label="태그 guard 제거"]');
+      expect(nestedRemove).toBeNull();
+    });
+
+    it('clicking remove button calls onRemove and NOT onClick', async () => {
       const onRemove = vi.fn();
       const onClick = vi.fn();
       const user = userEvent.setup();
       const { container } = render(
         <TagChip label="guard" removable onRemove={onRemove} onClick={onClick} />,
       );
-      // The inner remove button has specific aria-label
       const removeBtn = container.querySelector(
         'button[aria-label="태그 guard 제거"]',
       ) as HTMLButtonElement;
@@ -133,6 +154,19 @@ describe('TagChip', () => {
       await user.click(removeBtn);
       expect(onRemove).toHaveBeenCalledOnce();
       expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('clicking toggle button calls onClick and NOT onRemove', async () => {
+      const onRemove = vi.fn();
+      const onClick = vi.fn();
+      const user = userEvent.setup();
+      const { container } = render(
+        <TagChip label="guard" removable onRemove={onRemove} onClick={onClick} />,
+      );
+      const toggleBtn = container.querySelector('button[aria-pressed]') as HTMLButtonElement;
+      await user.click(toggleBtn);
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(onRemove).not.toHaveBeenCalled();
     });
   });
 

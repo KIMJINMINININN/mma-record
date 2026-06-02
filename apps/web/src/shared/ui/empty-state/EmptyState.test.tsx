@@ -6,17 +6,22 @@ import { EmptyState } from '@/shared/ui/empty-state/EmptyState';
 afterEach(cleanup);
 
 describe('EmptyState', () => {
-  it('renders the title', () => {
+  it('renders the title as a heading', () => {
     render(<EmptyState title="Nothing here yet" />);
-    expect(screen.getByText('Nothing here yet')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Nothing here yet' })).toBeInTheDocument();
   });
 
-  it('title is rendered as a <p> element (text-heading-xs)', () => {
+  it('title defaults to h2 with text-heading-xs class', () => {
     render(<EmptyState title="No sessions" />);
-    // Source uses <p> (not heading element) for the title
-    const titleEl = screen.getByText('No sessions');
-    expect(titleEl.tagName).toBe('P');
+    const titleEl = screen.getByRole('heading', { name: 'No sessions', level: 2 });
+    expect(titleEl.tagName).toBe('H2');
     expect(titleEl).toHaveClass('text-heading-xs');
+  });
+
+  it('titleAs="h3" renders an h3 heading', () => {
+    render(<EmptyState title="No sessions" titleAs="h3" />);
+    const titleEl = screen.getByRole('heading', { name: 'No sessions', level: 3 });
+    expect(titleEl.tagName).toBe('H3');
   });
 
   it('renders description when provided', () => {

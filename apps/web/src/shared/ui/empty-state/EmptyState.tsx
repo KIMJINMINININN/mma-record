@@ -12,13 +12,15 @@ export interface EmptyStateProps {
   /** 상단 아이콘/일러스트 슬롯. */
   icon?: ReactNode;
   title: string;
+  /** 제목의 시맨틱 헤딩 레벨. 기본값 'h2'. */
+  titleAs?: 'h2' | 'h3';
   description?: ReactNode;
   /** 버튼 등 액션 슬롯. */
   action?: ReactNode;
   className?: string;
 }
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon, title, titleAs: TitleTag = 'h2', description, action, className }: EmptyStateProps) {
   return (
     <div
       className={cx(
@@ -31,7 +33,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
           {icon}
         </div>
       )}
-      <p className="text-heading-xs text-[var(--text-strong)]">{title}</p>
+      <TitleTag className="text-heading-xs text-[var(--text-strong)]">{title}</TitleTag>
       {description && (
         <p className="max-w-sm text-body-s-400 text-[var(--text-muted)]">{description}</p>
       )}

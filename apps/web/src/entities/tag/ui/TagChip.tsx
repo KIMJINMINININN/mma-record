@@ -91,6 +91,15 @@ function CloseIcon({ size }: { size: NonNullable<ChipVariants['size']> }) {
   );
 }
 
+const removeButtonClass = [
+  'inline-flex items-center justify-center shrink-0',
+  'ml-0.5 rounded-full',
+  'text-[var(--text-muted)] hover:text-[var(--danger)]',
+  'transition-colors duration-150',
+  'focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]',
+  'disabled:pointer-events-none',
+].join(' ');
+
 export function TagChip({
   label,
   size = 'sm',
@@ -104,7 +113,6 @@ export function TagChip({
   const clickable = !!onClick && !disabled;
 
   const handleRemove = (e: React.MouseEvent) => {
-    // 칩 onClick(토글)으로 이벤트가 버블링되지 않도록 차단.
     e.stopPropagation();
     if (!disabled) onRemove?.();
   };
@@ -116,34 +124,43 @@ export function TagChip({
     .filter(Boolean)
     .join(' ');
 
-  const content = (
-    <>
-      {/* '#' 은 색약 대비를 위한 형태 단서(F9-AC4) — muted 톤으로 약하게. */}
-      <span aria-hidden="true" className="text-[var(--text-muted)]">
-        #
-      </span>
-      <span className="min-w-0 truncate">{label}</span>
-      {removable && (
+  // clickable + removable: 중첩 button을 피하기 위해 컨테이너를 span으로,
+  // 토글 button과 제거 button을 형제(sibling)로 배치한다.
+  if (clickable && removable) {
+    return (
+      <span
+        className={containerClassName}
+        aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+      >
+        {/* 토글 button — 라벨/해시 텍스트만 포함 */}
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          aria-pressed={selected}
+          aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+          className="inline-flex items-center gap-[inherit] focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]"
+        >
+          <span aria-hidden="true" className="text-[var(--text-muted)]">
+            #
+          </span>
+          <span className="min-w-0 truncate">{label}</span>
+        </button>
+        {/* 제거 button — 토글 button의 형제(sibling), 중첩 없음 */}
         <button
           type="button"
           onClick={handleRemove}
           disabled={disabled}
           aria-label={`태그 ${label} 제거`}
-          className={[
-            'inline-flex items-center justify-center shrink-0',
-            'ml-0.5 rounded-full',
-            'text-[var(--text-muted)] hover:text-[var(--danger)]',
-            'transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]',
-            'disabled:pointer-events-none',
-          ].join(' ')}
+          className={removeButtonClass}
         >
           <CloseIcon size={size} />
         </button>
-      )}
-    </>
-  );
+      </span>
+    );
+  }
 
+  // clickable만 (removable 없음): 기존 방식 — button 루트.
   if (clickable) {
     return (
       <button
@@ -154,7 +171,10 @@ export function TagChip({
         aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
         className={containerClassName}
       >
-        {content}
+        <span aria-hidden="true" className="text-[var(--text-muted)]">
+          #
+        </span>
+        <span className="min-w-0 truncate">{label}</span>
       </button>
     );
   }
@@ -165,7 +185,21 @@ export function TagChip({
       className={containerClassName}
       aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
     >
-      {content}
+      <span aria-hidden="true" className="text-[var(--text-muted)]">
+        #
+      </span>
+      <span className="min-w-0 truncate">{label}</span>
+      {removable && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={disabled}
+          aria-label={`태그 ${label} 제거`}
+          className={removeButtonClass}
+        >
+          <CloseIcon size={size} />
+        </button>
+      )}
     </span>
   );
 }

@@ -68,9 +68,16 @@ describe('TagInput — combobox aria attributes', () => {
     expect(input).toHaveAttribute('aria-controls', listbox.id);
   });
 
-  it('aria-controls is absent when dropdown is closed', () => {
+  it('aria-controls always references the listbox id, even when dropdown is closed', () => {
     render(<TagInput value={[]} onChange={vi.fn()} />);
-    expect(screen.getByRole('combobox')).not.toHaveAttribute('aria-controls');
+    const input = screen.getByRole('combobox');
+    // Per ARIA 1.2, aria-controls must always point to the listbox popup
+    const listboxId = input.getAttribute('aria-controls');
+    expect(listboxId).toBeTruthy();
+    // The listbox element must exist in the DOM (may be hidden when closed)
+    const listbox = document.getElementById(listboxId!);
+    expect(listbox).not.toBeNull();
+    expect(listbox).toHaveAttribute('role', 'listbox');
   });
 });
 

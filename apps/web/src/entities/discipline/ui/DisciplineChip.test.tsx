@@ -48,11 +48,15 @@ describe('DisciplineChip', () => {
   // ── DOT SIZE: labelled dot with aria-label/title ──────────────────────────
 
   describe('dot size', () => {
-    it('renders a span with role=img and aria-label (no visible text label)', () => {
+    it('renders a span with role=img, aria-label, and sr-only text label (color-blind robustness)', () => {
       const { container } = render(<DisciplineChip discipline="bjj_gi" size="dot" />);
       const dot = container.querySelector('[role="img"]');
       expect(dot).not.toBeNull();
       expect(dot).toHaveAttribute('aria-label', '주짓수 (기)');
+      // sr-only span must be in the DOM so the label is always present, not only via aria-label
+      const srOnly = dot!.querySelector('.sr-only');
+      expect(srOnly).not.toBeNull();
+      expect(srOnly!.textContent).toBe('주짓수 (기)');
     });
 
     it('dot has title attribute', () => {
@@ -67,7 +71,7 @@ describe('DisciplineChip', () => {
       expect(container.querySelector('svg')).toBeNull();
     });
 
-    it('dot does NOT render visible text label', () => {
+    it('dot does NOT render a .truncate visible text label (label is sr-only, not a visible chip label)', () => {
       const { container } = render(<DisciplineChip discipline="bjj_gi" size="dot" />);
       expect(container.querySelector('.truncate')).toBeNull();
     });
@@ -153,12 +157,9 @@ describe('DisciplineChip', () => {
     }
   });
 
-  // ── BUG REPORT NOTE ───────────────────────────────────────────────────────
-  // dot size: uses aria-label + title for accessible label but has NO SVG glyph.
+  // ── NOTE ──────────────────────────────────────────────────────────────────
+  // dot size: uses aria-label + title + sr-only text for accessible label, no SVG glyph.
   // The dot is a pure-color circle (backgroundColor: disc).
-  // F9-AC4 compliance relies entirely on aria-label/title (no shape glyph).
-  // For sighted color-blind users reading visual UI (not AT), this IS a
-  // color-only encoding risk — the title tooltip requires hover/focus to appear.
-  // Recommendation: add a visually-hidden text inside the dot span, or ensure
-  // that dot usage always appears alongside a visible sibling label in the caller.
+  // Color-blind robustness: sr-only <span> ensures the label is always in the DOM,
+  // not only via aria-label (which AT exposes) or title (tooltip, hover/focus only).
 });
