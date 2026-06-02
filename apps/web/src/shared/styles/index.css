@@ -1,3 +1,8 @@
+/* Cascade layer 순서 명시 — base(리셋) < components < utilities 여야 Tailwind 유틸리티가 리셋을 이긴다.
+   granular import는 이 순서를 자동 선언하지 않으므로 직접 둔다.
+   없으면 등장순서상 base가 utilities보다 뒤로 가서 리셋이 margin·padding·border·text 유틸리티를 덮어써 CSS가 깨진다. */
+@layer theme, base, components, utilities;
+
 /* Pretendard (KR primary typeface) */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 
@@ -9,13 +14,16 @@
 @import "./tailwind-utilities.css";
 @import "./app-components.css";
 
-/* Tailwind 유틸리티가 의존하는 최소 reset (preflight 대체) */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  border-width: 0;
-  border-style: solid;
+/* Tailwind 유틸리티가 의존하는 최소 reset (preflight 대체) —
+   반드시 @layer base 안에 둔다. 레이어 밖이면 모든 레이어를 이겨서 border 유틸리티를 죽인다. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+  }
 }
 
 /* SCSS 클래스명 충돌 방지 */
