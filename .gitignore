@@ -33,6 +33,14 @@ yarn-error.*
 # local env files
 .env*.local
 
+# e2e (Playwright) — 테스트 계정 시크릿·세션 스토리지·산출물 (커밋 금지)
+.env.test
+.env.test.local
+**/e2e/.auth/
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
+
 # typescript
 *.tsbuildinfo
 

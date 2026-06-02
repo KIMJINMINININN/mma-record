@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/link-test-react.mjs && vitest run",
     "test:watch": "node scripts/link-test-react.mjs && vitest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "db:start": "supabase start",
     "db:push": "supabase db push --linked",
     "db:types": "supabase gen types typescript --linked > src/shared/api/supabase/types.ts",
@@ -41,6 +43,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query-devtools": "^5.100.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -51,6 +54,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.2",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "jsdom": "^29.1.1",
