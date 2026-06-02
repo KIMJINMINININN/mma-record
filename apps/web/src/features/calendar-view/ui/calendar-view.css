@@ -1,0 +1,231 @@
+/* =============================================================================
+   calendar-view.css — react-calendar 커스텀 테마 (Design §7a / §8)
+   react-calendar 기본 Calendar.css는 import하지 않는다 — 전부 토큰으로 재작성.
+   semantic 토큰(surface / text / border / primary)만 참조 → 다크 자동 대응.
+   ========================================================================== */
+
+/* ---- 루트 컨테이너 ------------------------------------------------------- */
+.react-calendar {
+  width: 100%;
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  font-family: var(--font-pretendard);
+  line-height: 1.2;
+}
+
+/* navigation은 앱 레벨 상단바가 담당 → showNavigation={false}이지만 방어적으로 숨김. */
+.react-calendar .react-calendar__navigation {
+  display: none;
+}
+
+/* ---- 요일 헤더 (일~토) --------------------------------------------------- */
+.react-calendar .react-calendar__month-view__weekdays {
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+}
+
+.react-calendar .react-calendar__month-view__weekdays__weekday {
+  padding: 0.5rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* react-calendar는 요일에 abbr[title] 밑줄을 넣음 → 제거 */
+.react-calendar .react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+  cursor: default;
+}
+
+/* 일요일(0번째) = 빨강 톤, 토요일(7번째 셀)도 약하게 구분 */
+.react-calendar .react-calendar__month-view__weekdays__weekday:first-child {
+  color: var(--danger);
+}
+
+/* ---- 주(week) 행 --------------------------------------------------------- */
+.react-calendar .react-calendar__month-view__days {
+  /* 7열 그리드 — react-calendar 내부는 flex지만 셀 비율을 명시해 일관 정렬 */
+}
+
+/* ---- 날짜 타일(셀) ------------------------------------------------------- */
+.react-calendar .react-calendar__tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 4rem;
+  padding: 0.375rem 0.375rem 0.5rem;
+  background: var(--surface-base);
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-default);
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+@media (min-width: 768px) {
+  .react-calendar .react-calendar__tile {
+    min-height: 6rem;
+    padding: 0.5rem 0.5rem 0.625rem;
+  }
+}
+
+/* 매주 마지막 열(토)·마지막 행 보더 정리 — flex 레이아웃이라 nth로 처리 */
+.react-calendar .react-calendar__tile:nth-child(7n) {
+  border-right: 0;
+}
+
+/* react-calendar 기본 abbr(숫자 라벨) — 우리 셀 숫자 표현으로 대체하므로 정돈 */
+.react-calendar .react-calendar__tile abbr {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+/* hover — pointer:fine 에서만 (터치 false-hover 방지, §10.3) */
+@media (hover: hover) and (pointer: fine) {
+  .react-calendar .react-calendar__tile:enabled:hover {
+    background: var(--surface-sunken);
+  }
+}
+
+/* 포커스 — 키보드 내비 가시성(§10.1), 빨강 ring */
+.react-calendar .react-calendar__tile:enabled:focus-visible {
+  box-shadow: inset var(--ring-focus);
+  z-index: 1;
+}
+
+/* ---- 이웃 달(전/다음 달) 셀 = 흐림 ------------------------------------- */
+.react-calendar .react-calendar__month-view__days__day--neighboringMonth {
+  color: var(--text-disabled);
+  background: var(--surface-app);
+}
+
+/* ---- 빈 날 vs 기록 날 (커스텀 상태 클래스, tileClassName 주입) ----------- */
+/* 기록 있는 날: 표면 미세 raised — 카드 그림자로 살짝 떠 보이게 (§7a/§8) */
+.react-calendar .react-calendar__tile.cal-tile--logged {
+  background: var(--surface-raised);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .react-calendar .react-calendar__tile.cal-tile--logged:enabled:hover {
+    box-shadow: var(--shadow-card);
+    z-index: 1;
+  }
+}
+
+/* 빈 날: hover 시 옅은 `+` 고스트 (cal-cell-ghost는 DayCellContent 미렌더라 ::after로) */
+.react-calendar .react-calendar__tile.cal-tile--empty::after {
+  content: '+';
+  position: absolute;
+  right: 0.375rem;
+  bottom: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1;
+  color: var(--text-disabled);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .react-calendar .react-calendar__tile.cal-tile--empty:enabled:hover::after {
+    opacity: 1;
+  }
+}
+
+/* 이웃 달 빈 날에는 + 고스트 숨김(노이즈 방지) */
+.react-calendar
+  .react-calendar__month-view__days__day--neighboringMonth.cal-tile--empty::after {
+  display: none;
+}
+
+/* ---- 오늘 = 빨강 채운 원 (가장 강한 빨강 신호, §8) --------------------- */
+/* react-calendar 기본 --now 배경은 쓰지 않고 숫자(abbr)에 빨강 디스크 */
+.react-calendar .react-calendar__tile--now {
+  background: var(--surface-base);
+}
+
+.react-calendar .react-calendar__tile--now abbr {
+  background: var(--primary);
+  color: var(--text-on-primary);
+  font-weight: 600;
+}
+
+.react-calendar .react-calendar__tile--now.cal-tile--logged {
+  background: var(--surface-raised);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .react-calendar .react-calendar__tile--now:enabled:hover {
+    background: var(--surface-sunken);
+  }
+}
+
+/* ---- 선택된 날 = 빨강 ring (focus-ring 톤, §7a) ------------------------- */
+.react-calendar .react-calendar__tile--active {
+  background: var(--surface-base);
+  box-shadow: inset var(--ring-focus);
+  z-index: 1;
+}
+
+.react-calendar .react-calendar__tile--active.cal-tile--logged {
+  background: var(--surface-raised);
+}
+
+/* 오늘이면서 선택됨: 빨강 ring + 빨강 디스크 모두 유지 */
+.react-calendar .react-calendar__tile--active.react-calendar__tile--now abbr {
+  background: var(--primary);
+  color: var(--text-on-primary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .react-calendar .react-calendar__tile--active:enabled:hover {
+    background: var(--surface-sunken);
+  }
+}
+
+/* ---- 월 전환 모션 — 슬라이드/페이드 (§8, reduced-motion 대응) ----------- */
+.react-calendar .react-calendar__viewContainer {
+  animation: cal-month-in var(--duration-base) var(--ease-standard);
+}
+
+@keyframes cal-month-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-calendar .react-calendar__viewContainer {
+    animation: cal-month-fade var(--duration-fast) var(--ease-standard);
+  }
+  @keyframes cal-month-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

@@ -1,0 +1,22 @@
+# .gitleaks.toml — 시크릿 스캐너 설정 (Develop §3.3)
+#
+# gitleaks 기본 룰셋(useDefault) 위에, 프로젝트 오탐(false positive)만
+# allowlist 로 예외 처리한다. lefthook pre-commit 이 자동 탐지해 사용.
+
+title = "the_others gitleaks config"
+
+[extend]
+# gitleaks 내장 기본 규칙 전체를 상속(Supabase/AWS/JWT/Generic 등).
+useDefault = true
+
+[allowlist]
+description = "프로젝트 오탐 방지 허용목록"
+# 경로 기반 제외 — 시크릿이 들어올 수 없고, 고엔트로피 오탐만 유발하는 파일만.
+#  · docs/     : 기획 문서 — 예시 env 레이아웃/가짜 토큰 스니펫 포함(차단되면 문서 작성 마찰)
+#  · pnpm-lock : 잠금파일 — 무결성 해시가 고엔트로피 오탐 유발
+# ※ .env.example 은 제외하지 않는다(placeholder는 오탐 0으로 검증됨 → 실수로 진짜 키가
+#    박히면 오히려 잡혀야 함). 실제 키 파일 .env.local/.env.test 는 gitignore + 비-allowlist.
+paths = [
+  '''(^|/)docs/''',
+  '''(^|/)pnpm-lock\.yaml$''',
+]

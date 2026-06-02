@@ -1,0 +1,57 @@
+/* ==========================================================================
+   Component Utilities
+   컴포넌트 마이그레이션 시 추가되는 커스텀 애니메이션 및 유틸리티
+   ========================================================================== */
+
+/* BottomSheets */
+@keyframes b-bs-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes b-bs-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@utility animate-bs-in {
+  animation: b-bs-in 0.3s ease forwards;
+}
+
+@utility animate-bs-out {
+  animation: b-bs-out 0.3s ease forwards;
+}
+
+/* Skeleton */
+@keyframes b-skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@utility animate-skeleton {
+  animation: b-skeleton-loading 1.5s infinite ease-in-out;
+}
+
+/* Scrollbar Hidden */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

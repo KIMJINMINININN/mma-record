@@ -1,0 +1,22 @@
+{
+  "name": "the-others",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "mobile": "pnpm --filter @the-others/mobile",
+    "web": "pnpm --filter @the-others/web",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "build": "turbo run build",
+    "dev": "turbo run dev"
+  },
+  "devDependencies": {
+    "lefthook": "^2.1.9",
+    "turbo": "^2.3.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  }
+}

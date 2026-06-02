@@ -1,0 +1,18 @@
+/* Styles for 3rd-party DOM that cannot be targeted with Tailwind utilities */
+@layer components {
+  /* Drag-and-drop grab cursor (used by @hello-pangea/dnd) */
+  [data-rfd-draggable-context-id]:hover {
+    cursor: grab;
+  }
+  [data-rfd-draggable-context-id]:active {
+    cursor: grabbing;
+  }
+  [data-rfd-draggable-context-id] {
+    transition: background-color 0.2s ease;
+  }
+
+  /* ShopItemEditPopup dialog minimum height */
+  .dialog-content {
+    min-height: 576px;
+  }
+}

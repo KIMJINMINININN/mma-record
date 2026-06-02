@@ -1,0 +1,171 @@
+'use client';
+
+import { cva, type VariantProps } from 'class-variance-authority';
+
+/**
+ * TagChip — 자유 태그 칩 (Design.md §6.3).
+ * 이름 앞에 '#' 표시. radius rounded-xxs. 상호작용(클릭/제거)이 있어 클라이언트 컴포넌트.
+ *
+ * states: default / selected(필터 ON) / removable / disabled / focus-visible(빨강 ring).
+ * 색약 대응(F9-AC4): 의미 색에는 항상 텍스트 라벨('#name')과 aria-label을 병기.
+ *
+ * semantic alias(--text-default/--text-muted/--danger/--ring-focus)는 :root 정의라
+ * Tailwind 유틸 자동 생성이 안 되므로 arbitrary value로 사용한다.
+ */
+
+const chip = cva(
+  // 공통: 인라인 플렉스 + 칩 형태 + 색/그림자 전환 + 빨강 focus-visible ring
+  [
+    'inline-flex items-center select-none align-middle',
+    'rounded-xxs border whitespace-nowrap',
+    'transition-colors duration-150',
+    'focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]',
+  ].join(' '),
+  {
+    variants: {
+      size: {
+        // sm: text-button-xs, xs: text-button-xxs
+        sm: 'h-7 px-2.5 gap-1 text-button-xs',
+        xs: 'h-6 px-2 gap-0.5 text-button-xxs',
+      },
+      selected: {
+        // 필터 ON: semantic primary-soft 틴트(다크에서 red-900으로 flip) + primary 보더 + active 텍스트
+        true: 'bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary-active)]',
+        // default: 중립 surface 토큰, hover 시 text 색 8% 믹스로 한 단계 진하게
+        false:
+          'bg-[var(--surface-sunken)] border-transparent text-[var(--text-default)] hover:bg-[color-mix(in_srgb,var(--text-default)_8%,transparent)]',
+      },
+      disabled: {
+        true: 'opacity-50 pointer-events-none',
+        false: '',
+      },
+      clickable: {
+        true: 'cursor-pointer',
+        false: '',
+      },
+    },
+    defaultVariants: {
+      size: 'sm',
+      selected: false,
+      disabled: false,
+      clickable: false,
+    },
+  },
+);
+
+type ChipVariants = VariantProps<typeof chip>;
+
+export interface TagChipProps {
+  /** 태그 이름 ('#' 접두사는 컴포넌트가 자동 표시) */
+  label: string;
+  size?: NonNullable<ChipVariants['size']>;
+  /** 필터 선택 상태 */
+  selected?: boolean;
+  /** 우측 제거(×) 버튼 노출 */
+  removable?: boolean;
+  disabled?: boolean;
+  /** 제거 버튼 클릭 콜백 */
+  onRemove?: () => void;
+  /** 칩 본문 클릭 콜백 (필터 토글 등) */
+  onClick?: () => void;
+  className?: string;
+}
+
+/** 제거(×) 아이콘 — currentColor 상속, 라이브러리 의존 없음. */
+function CloseIcon({ size }: { size: NonNullable<ChipVariants['size']> }) {
+  const px = size === 'xs' ? 8 : 9;
+  return (
+    <svg
+      width={px}
+      height={px}
+      viewBox="0 0 10 10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
+    </svg>
+  );
+}
+
+export function TagChip({
+  label,
+  size = 'sm',
+  selected = false,
+  removable = false,
+  disabled = false,
+  onRemove,
+  onClick,
+  className,
+}: TagChipProps) {
+  const clickable = !!onClick && !disabled;
+
+  const handleRemove = (e: React.MouseEvent) => {
+    // 칩 onClick(토글)으로 이벤트가 버블링되지 않도록 차단.
+    e.stopPropagation();
+    if (!disabled) onRemove?.();
+  };
+
+  const containerClassName = [
+    chip({ size, selected, disabled, clickable }),
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const content = (
+    <>
+      {/* '#' 은 색약 대비를 위한 형태 단서(F9-AC4) — muted 톤으로 약하게. */}
+      <span aria-hidden="true" className="text-[var(--text-muted)]">
+        #
+      </span>
+      <span className="min-w-0 truncate">{label}</span>
+      {removable && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={disabled}
+          aria-label={`태그 ${label} 제거`}
+          className={[
+            'inline-flex items-center justify-center shrink-0',
+            'ml-0.5 rounded-full',
+            'text-[var(--text-muted)] hover:text-[var(--danger)]',
+            'transition-colors duration-150',
+            'focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]',
+            'disabled:pointer-events-none',
+          ].join(' ')}
+        >
+          <CloseIcon size={size} />
+        </button>
+      )}
+    </>
+  );
+
+  if (clickable) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-pressed={selected}
+        aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+        className={containerClassName}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  // 비클릭: 의미 정보 전달용 span (제거 버튼은 자체 button으로 동작).
+  return (
+    <span
+      className={containerClassName}
+      aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+    >
+      {content}
+    </span>
+  );
+}

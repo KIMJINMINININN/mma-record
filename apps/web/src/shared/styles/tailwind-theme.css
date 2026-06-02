@@ -1,0 +1,395 @@
+/* ===== Custom Variants ===== */
+@custom-variant pointer-hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+/* dark variant — [data-theme="dark"] 명시 토글이 주 메커니즘(Design §2.8).
+   data-theme 미지정 시 OS prefers-color-scheme:dark도 함께 지원.
+   ⚠️ :root semantic alias 분기 로직(아래)과 정확히 일치시킬 것. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
+/* =============================================================================
+   MMA 트레이닝 저널 — Red / Black / White 재테마
+   SSoT: docs/mma/Design.md §2 (컬러) · §4 (스페이싱/엘리베이션/모션)
+   - 3-Tier 색 모델: Brand·Neutral(빨강 신호) / Belt(정보) / Discipline(정보)
+   - 빨강 = 항상 액션·주의·오늘. 종목/벨트 색은 빨강 계열 회피.
+   ========================================================================== */
+@theme {
+  /* Reset — Tailwind CSS v4 기본 테마 변수를 초기화 */
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --font-weight-*: initial;
+  --radius-*: initial;
+
+  /* Font Family (유지) */
+  --font-pretendard: "Pretendard", sans-serif;
+
+  /* ---- Neutral: Black → White (Design §2.3) ---- */
+  --color-white: #ffffff;
+  --color-gray-025: #fafafa;
+  --color-gray-50: #f4f4f5;
+  --color-gray-100: #e9e9ec;
+  --color-gray-200: #d7d7dc;
+  --color-gray-300: #bcbcc4;
+  --color-gray-400: #9a9aa3;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3f3f46;
+  --color-gray-800: #27272a;
+  --color-gray-900: #18181b;
+  --color-gray-950: #101012;
+  --color-black: #000000;
+  --color-black-30: #0000004d;
+
+  /* ---- Red = Brand Primary (Design §2.2) — primary `#e11d2a` 옥타곤 레드 ---- */
+  --color-red-50: #fff1f2;
+  --color-red-100: #ffe0e2;
+  --color-red-200: #fcc0c4;
+  --color-red-300: #f88a91;
+  --color-red-400: #f25761;
+  --color-red-500: #e11d2a; /* PRIMARY — 버튼/오늘/활성/링크 */
+  --color-red-600: #c2151f;
+  --color-red-700: #9e0f18;
+  --color-red-800: #7a0c13;
+  --color-red-900: #5c080e;
+
+  /* ---- Status (semantic raw) (Design §2.4) ---- */
+  --color-success-600: #15803d;
+  --color-success-400: #34d399;
+  --color-warning-600: #b45309;
+  --color-warning-400: #fbbf24;
+
+  /* ---- Domain: Belt (Design §2.5) ---- */
+  --color-belt-white: #ffffff;
+  --color-belt-blue: #1d4ed8;
+  --color-belt-purple: #6d28d9;
+  --color-belt-purple-dark: #7c3aed;
+  --color-belt-brown: #6b4226;
+  --color-belt-brown-dark: #7c4f30;
+  --color-belt-black: #18181b;
+  --color-belt-stripe: #ffffff; /* 기본 stripe (검정/유색 벨트) */
+  --color-belt-stripe-onwhite: #18181b; /* 흰띠 stripe */
+  --color-belt-stripe-onblack: #e11d2a; /* 흑띠 적색 바 */
+
+  /* ---- Domain: Discipline · light 기준 (Design §2.6 / discipline-meta.ts) ---- */
+  --color-disc-bjj-gi: #1d4ed8;
+  --color-disc-bjj-nogi: #0e7490;
+  --color-disc-wrestling: #b45309;
+  --color-disc-striking: #c2410c;
+  --color-disc-mma: #5b21b6;
+
+  /* Spacing 기준 (유지) */
+  --spacing: 1px;
+
+  /* Border Radius (유지) */
+  --radius-xxs: 6px;
+  --radius-xs: 8px;
+  --radius-s: 10px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-xl: 20px;
+  --radius-xxl: 24px;
+
+  /* ---- Elevation / Shadow (Design §4.3) — 중립(검정 기반) ---- */
+  --shadow-e1: 0 1px 2px 0 rgb(0 0 0 / 0.06);
+  --shadow-e2: 0 2px 8px -1px rgb(0 0 0 / 0.1);
+  --shadow-e3: 0 8px 24px -4px rgb(0 0 0 / 0.14);
+  --shadow-e4: 0 16px 48px -8px rgb(0 0 0 / 0.2);
+
+  /* ---- Focus ring (Design §2.7) ---- */
+  --ring-focus: 0 0 0 3px rgb(225 29 42 / 0.4);
+
+  /* ---- Motion (Design §4.4) ---- */
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+}
+
+/* =============================================================================
+   Semantic Alias 레이어 (Design §2.4 / §2.8)
+   @theme는 정적이므로 의미 토큰은 :root / [data-theme]에 두어 런타임 토글.
+   컴포넌트는 raw 색이 아니라 이 의미 토큰을 참조한다.
+   ⚠️ dark 값을 수정하면 아래 @media(prefers-color-scheme) 블록도 함께 동기화할 것.
+   ========================================================================== */
+:root,
+:root[data-theme="light"] {
+  --surface-app: var(--color-gray-025);
+  --surface-base: var(--color-white);
+  --surface-raised: var(--color-white);
+  --surface-sunken: var(--color-gray-50);
+  /* 모달/바텀시트 뒤 스크림(딤) — 45% 검정은 테마 불변이라 여기 한 번만 정의(dark로 그대로 cascade). */
+  --surface-overlay: rgb(0 0 0 / 0.45);
+  --text-strong: var(--color-gray-900);
+  --text-default: var(--color-gray-800);
+  --text-muted: var(--color-gray-500);
+  --text-disabled: var(--color-gray-400);
+  --text-on-primary: var(--color-white);
+  --border-default: var(--color-gray-200);
+  --border-strong: var(--color-gray-300);
+  --border-subtle: var(--color-gray-100);
+  --primary: var(--color-red-500);
+  --primary-hover: var(--color-red-600);
+  --primary-active: var(--color-red-700);
+  --primary-soft: var(--color-red-50);
+  --danger: var(--color-red-600);
+  --success: var(--color-success-600);
+  --warning: var(--color-warning-600);
+  --shadow-card: var(--shadow-e2);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --surface-app: var(--color-gray-950);
+  --surface-base: var(--color-gray-900);
+  --surface-raised: var(--color-gray-800);
+  --surface-sunken: #0c0c0e;
+  --text-strong: var(--color-white);
+  --text-default: var(--color-gray-100);
+  --text-muted: var(--color-gray-400);
+  --text-disabled: var(--color-gray-600);
+  --text-on-primary: var(--color-white);
+  --border-default: var(--color-gray-700);
+  --border-strong: var(--color-gray-600);
+  --border-subtle: var(--color-gray-800);
+  --primary: var(--color-red-500);
+  --primary-hover: var(--color-red-400);
+  --primary-active: var(--color-red-300);
+  --primary-soft: var(--color-red-900);
+  --danger: var(--color-red-400);
+  --success: var(--color-success-400);
+  --warning: var(--color-warning-400);
+  /* dark에서는 그림자 약화 + 상단 1px 하이라이트로 입체 표현 */
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04), 0 2px 12px -2px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* OS 선호 자동 적용 (사용자가 data-theme를 명시하지 않은 경우)
+   — 위 [data-theme="dark"] 블록과 동일 값 (동기화 유지) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --surface-app: var(--color-gray-950);
+    --surface-base: var(--color-gray-900);
+    --surface-raised: var(--color-gray-800);
+    --surface-sunken: #0c0c0e;
+    --text-strong: var(--color-white);
+    --text-default: var(--color-gray-100);
+    --text-muted: var(--color-gray-400);
+    --text-disabled: var(--color-gray-600);
+    --text-on-primary: var(--color-white);
+    --border-default: var(--color-gray-700);
+    --border-strong: var(--color-gray-600);
+    --border-subtle: var(--color-gray-800);
+    --primary: var(--color-red-500);
+    --primary-hover: var(--color-red-400);
+    --primary-active: var(--color-red-300);
+    --primary-soft: var(--color-red-900);
+    --danger: var(--color-red-400);
+    --success: var(--color-success-400);
+    --warning: var(--color-warning-400);
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04), 0 2px 12px -2px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+/* Typography Utilities */
+@utility text-display-l {
+  font-family: Pretendard, sans-serif;
+  font-size: 3.5rem;
+  line-height: 4.25rem;
+  font-weight: 700;
+}
+
+@utility text-display-m {
+  font-family: Pretendard, sans-serif;
+  font-size: 2.5rem;
+  line-height: 3.25rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xxl {
+  font-family: Pretendard, sans-serif;
+  font-size: 2rem;
+  line-height: 2.75rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xl {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.75rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+}
+
+@utility text-heading-l {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.5rem;
+  line-height: 2.125rem;
+  font-weight: 700;
+}
+
+@utility text-heading-m {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
+
+@utility text-heading-s {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xs {
+  font-family: Pretendard, sans-serif;
+  font-size: 1rem;
+  line-height: 1.375rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xxs {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 700;
+}
+
+/* Body 500 */
+@utility text-body-xl-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.3125rem;
+  line-height: 2.125rem;
+  font-weight: 500;
+}
+
+@utility text-body-l-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.1875rem;
+  line-height: 1.875rem;
+  font-weight: 500;
+}
+
+@utility text-body-m-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
+
+@utility text-body-s-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+
+@utility text-body-xs-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+@utility text-body-xxs-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+/* Body 400 */
+@utility text-body-xl-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.3125rem;
+  line-height: 2.125rem;
+  font-weight: 400;
+}
+
+@utility text-body-l-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.1875rem;
+  line-height: 1.875rem;
+  font-weight: 400;
+}
+
+@utility text-body-m-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.75rem;
+  font-weight: 400;
+}
+
+@utility text-body-s-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+}
+
+@utility text-body-xs-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+@utility text-body-xxs-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+}
+
+/* Button Typography */
+@utility text-button-l {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+@utility text-button-m {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+@utility text-button-s {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1rem;
+  font-weight: 500;
+}
+
+@utility text-button-xs {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.75rem;
+  line-height: 0.875rem;
+  font-weight: 500;
+}
+
+@utility text-button-xxs {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.625rem;
+  line-height: 0.75rem;
+  font-weight: 500;
+}

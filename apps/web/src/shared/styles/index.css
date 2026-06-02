@@ -1,0 +1,72 @@
+/* Pretendard (KR primary typeface) */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+
+/* Tailwind v4 — granular imports (preflight 제외, 커스텀 reset 사용) */
+@import "tailwindcss/theme";
+@import "tailwindcss/utilities";
+
+@import "./tailwind-theme.css";
+@import "./tailwind-utilities.css";
+@import "./app-components.css";
+
+/* Tailwind 유틸리티가 의존하는 최소 reset (preflight 대체) */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+}
+
+/* SCSS 클래스명 충돌 방지 */
+@source not inline("contents");
+@source not inline("container");
+
+body {
+  font-family: Pretendard, sans-serif;
+}
+
+/* history: 삭제된 _reset.scss에서 가져온 CSS 리셋 */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: none;
+  }
+
+  body {
+    line-height: 1;
+  }
+
+  ol,
+  ul {
+    list-style: none;
+  }
+
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  input {
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}

@@ -1,0 +1,727 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  public: {
+    Tables: {
+      media_assets: {
+        Row: {
+          created_at: string
+          duration_sec: number | null
+          external_url: string | null
+          id: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          size_bytes: number | null
+          storage_path: string | null
+          thumbnail_path: string | null
+          title: string | null
+          user_id: string
+          visibility: Database["public"]["Enums"]["visibility"]
+          youtube_video_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_sec?: number | null
+          external_url?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          size_bytes?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          title?: string | null
+          user_id: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+          youtube_video_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_sec?: number | null
+          external_url?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["media_kind"]
+          size_bytes?: number | null
+          storage_path?: string | null
+          thumbnail_path?: string | null
+          title?: string | null
+          user_id?: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+          youtube_video_id?: string | null
+        }
+        Relationships: []
+      }
+      media_links: {
+        Row: {
+          created_at: string
+          id: string
+          media_id: string
+          session_id: string | null
+          technique_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          media_id: string
+          session_id?: string | null
+          technique_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          media_id?: string
+          session_id?: string | null
+          technique_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_links_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_links_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_links_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          timezone: string
+          updated_at: string
+          user_id: string
+          visibility: Database["public"]["Enums"]["visibility"]
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Relationships: []
+      }
+      session_disciplines: {
+        Row: {
+          discipline: Database["public"]["Enums"]["discipline"]
+          session_id: string
+        }
+        Insert: {
+          discipline: Database["public"]["Enums"]["discipline"]
+          session_id: string
+        }
+        Update: {
+          discipline?: Database["public"]["Enums"]["discipline"]
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_disciplines_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_techniques: {
+        Row: {
+          created_at: string
+          day_memo_md: string | null
+          id: string
+          session_id: string
+          sort_order: number
+          technique_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_memo_md?: string | null
+          id?: string
+          session_id: string
+          sort_order?: number
+          technique_id: string
+        }
+        Update: {
+          created_at?: string
+          day_memo_md?: string | null
+          id?: string
+          session_id?: string
+          sort_order?: number
+          technique_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_techniques_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_techniques_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          class_type: Database["public"]["Enums"]["class_type"] | null
+          created_at: string
+          duration_min: number | null
+          gym: string | null
+          id: string
+          intensity: number | null
+          memo_md: string | null
+          partners: string | null
+          rating: number | null
+          rounds: number | null
+          trained_on: string
+          updated_at: string
+          user_id: string
+          visibility: Database["public"]["Enums"]["visibility"]
+        }
+        Insert: {
+          class_type?: Database["public"]["Enums"]["class_type"] | null
+          created_at?: string
+          duration_min?: number | null
+          gym?: string | null
+          id?: string
+          intensity?: number | null
+          memo_md?: string | null
+          partners?: string | null
+          rating?: number | null
+          rounds?: number | null
+          trained_on: string
+          updated_at?: string
+          user_id: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Update: {
+          class_type?: Database["public"]["Enums"]["class_type"] | null
+          created_at?: string
+          duration_min?: number | null
+          gym?: string | null
+          id?: string
+          intensity?: number | null
+          memo_md?: string | null
+          partners?: string | null
+          rating?: number | null
+          rounds?: number | null
+          trained_on?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Relationships: []
+      }
+      taggables: {
+        Row: {
+          id: string
+          session_id: string | null
+          tag_id: string
+          technique_id: string | null
+        }
+        Insert: {
+          id?: string
+          session_id?: string | null
+          tag_id: string
+          technique_id?: string | null
+        }
+        Update: {
+          id?: string
+          session_id?: string | null
+          tag_id?: string
+          technique_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taggables_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taggables_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taggables_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      techniques: {
+        Row: {
+          belt: Database["public"]["Enums"]["belt"] | null
+          belt_stripes: number | null
+          category: Database["public"]["Enums"]["technique_category"]
+          created_at: string
+          description_md: string | null
+          details_md: string | null
+          discipline: Database["public"]["Enums"]["discipline"]
+          id: string
+          name: string
+          position: Database["public"]["Enums"]["position_kind"] | null
+          striking_style: Database["public"]["Enums"]["striking_style"] | null
+          updated_at: string
+          user_id: string
+          visibility: Database["public"]["Enums"]["visibility"]
+        }
+        Insert: {
+          belt?: Database["public"]["Enums"]["belt"] | null
+          belt_stripes?: number | null
+          category: Database["public"]["Enums"]["technique_category"]
+          created_at?: string
+          description_md?: string | null
+          details_md?: string | null
+          discipline: Database["public"]["Enums"]["discipline"]
+          id?: string
+          name: string
+          position?: Database["public"]["Enums"]["position_kind"] | null
+          striking_style?: Database["public"]["Enums"]["striking_style"] | null
+          updated_at?: string
+          user_id: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Update: {
+          belt?: Database["public"]["Enums"]["belt"] | null
+          belt_stripes?: number | null
+          category?: Database["public"]["Enums"]["technique_category"]
+          created_at?: string
+          description_md?: string | null
+          details_md?: string | null
+          discipline?: Database["public"]["Enums"]["discipline"]
+          id?: string
+          name?: string
+          position?: Database["public"]["Enums"]["position_kind"] | null
+          striking_style?: Database["public"]["Enums"]["striking_style"] | null
+          updated_at?: string
+          user_id?: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Relationships: []
+      }
+      user_ranks: {
+        Row: {
+          belt: Database["public"]["Enums"]["belt"] | null
+          created_at: string
+          id: string
+          level: string | null
+          stripes: number | null
+          track: Database["public"]["Enums"]["rank_track"]
+          updated_at: string
+          user_id: string
+          visibility: Database["public"]["Enums"]["visibility"]
+        }
+        Insert: {
+          belt?: Database["public"]["Enums"]["belt"] | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          stripes?: number | null
+          track: Database["public"]["Enums"]["rank_track"]
+          updated_at?: string
+          user_id: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Update: {
+          belt?: Database["public"]["Enums"]["belt"] | null
+          created_at?: string
+          id?: string
+          level?: string | null
+          stripes?: number | null
+          track?: Database["public"]["Enums"]["rank_track"]
+          updated_at?: string
+          user_id?: string
+          visibility?: Database["public"]["Enums"]["visibility"]
+        }
+        Relationships: []
+      }
+      youtube_cache: {
+        Row: {
+          fetched_at: string
+          query: string
+          results: Json
+        }
+        Insert: {
+          fetched_at?: string
+          query: string
+          results: Json
+        }
+        Update: {
+          fetched_at?: string
+          query?: string
+          results?: Json
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      calendar_day_summary: {
+        Row: {
+          disciplines: Database["public"]["Enums"]["discipline"][] | null
+          has_media: boolean | null
+          session_count: number | null
+          trained_on: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      log_session: {
+        Args: {
+          p_class_type?: Database["public"]["Enums"]["class_type"]
+          p_disciplines?: Json
+          p_duration_min?: number
+          p_gym?: string
+          p_intensity?: number
+          p_media?: Json
+          p_memo_md?: string
+          p_partners?: string
+          p_rating?: number
+          p_rounds?: number
+          p_tag_ids?: Json
+          p_techniques?: Json
+          p_trained_on: string
+          p_user: string
+        }
+        Returns: string
+      }
+      search_all: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          rank: number
+          result_id: string
+          result_type: string
+          subtitle: string
+          title: string
+        }[]
+      }
+      seed_starter_techniques: { Args: { p_user: string }; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+    }
+    Enums: {
+      belt: "white" | "blue" | "purple" | "brown" | "black"
+      class_type:
+        | "technique"
+        | "drilling"
+        | "sparring"
+        | "open_mat"
+        | "private"
+        | "seminar"
+        | "competition"
+        | "strength"
+      discipline: "bjj_gi" | "bjj_nogi" | "wrestling" | "striking" | "mma"
+      media_kind: "upload" | "youtube" | "external"
+      position_kind:
+        | "standing"
+        | "clinch"
+        | "closed_guard"
+        | "open_guard"
+        | "half_guard"
+        | "mount"
+        | "side_control"
+        | "back_control"
+        | "turtle"
+        | "north_south"
+        | "knee_on_belly"
+        | "other"
+      rank_track: "bjj" | "wrestling" | "striking" | "mma"
+      striking_style: "muay_thai" | "kickboxing" | "boxing" | "other"
+      technique_category:
+        | "guard"
+        | "pass"
+        | "sweep"
+        | "submission"
+        | "takedown"
+        | "escape"
+        | "transition"
+        | "control"
+        | "defense"
+        | "punch"
+        | "kick"
+        | "knee"
+        | "elbow"
+        | "clinch"
+        | "combination"
+        | "footwork"
+        | "entry"
+        | "cage_work"
+        | "ground_and_pound"
+      visibility: "private" | "shared" | "public"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      belt: ["white", "blue", "purple", "brown", "black"],
+      class_type: [
+        "technique",
+        "drilling",
+        "sparring",
+        "open_mat",
+        "private",
+        "seminar",
+        "competition",
+        "strength",
+      ],
+      discipline: ["bjj_gi", "bjj_nogi", "wrestling", "striking", "mma"],
+      media_kind: ["upload", "youtube", "external"],
+      position_kind: [
+        "standing",
+        "clinch",
+        "closed_guard",
+        "open_guard",
+        "half_guard",
+        "mount",
+        "side_control",
+        "back_control",
+        "turtle",
+        "north_south",
+        "knee_on_belly",
+        "other",
+      ],
+      rank_track: ["bjj", "wrestling", "striking", "mma"],
+      striking_style: ["muay_thai", "kickboxing", "boxing", "other"],
+      technique_category: [
+        "guard",
+        "pass",
+        "sweep",
+        "submission",
+        "takedown",
+        "escape",
+        "transition",
+        "control",
+        "defense",
+        "punch",
+        "kick",
+        "knee",
+        "elbow",
+        "clinch",
+        "combination",
+        "footwork",
+        "entry",
+        "cage_work",
+        "ground_and_pound",
+      ],
+      visibility: ["private", "shared", "public"],
+    },
+  },
+} as const

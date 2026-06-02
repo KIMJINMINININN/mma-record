@@ -1,0 +1,17 @@
+# lefthook.yml — Git 훅 관리 (Develop §3.3)
+#
+# pre-commit: 스테이징된 변경(diff)에서 시크릿 누출을 차단한다(gitleaks).
+# 시크릿 무유출은 이 프로젝트의 1순위 비협상 정책 — 자동 안전망.
+# 설정/허용목록은 루트 .gitleaks.toml 을 gitleaks 가 자동 탐지한다.
+#
+# 우회가 꼭 필요하면 `git commit --no-verify` (지양). 훅 끄기: `LEFTHOOK=0 git commit`.
+
+pre-commit:
+  commands:
+    gitleaks:
+      # 스테이징된 diff 만 스캔(--staged). 의심 패턴 발견 시 exit 1 → 커밋 차단.
+      run: gitleaks git --staged --no-banner --redact
+      fail_text: |
+        🚫 시크릿 의심 패턴이 스테이징되어 커밋을 차단했습니다.
+        위 gitleaks 출력의 Finding/File/Rule 을 확인하고 해당 값을 제거하세요.
+        (오탐이면 루트 .gitleaks.toml 의 allowlist 에 예외를 추가)
