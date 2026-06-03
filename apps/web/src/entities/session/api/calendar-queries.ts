@@ -75,3 +75,39 @@ export async function fetchDaySessions(dateISO: string): Promise<SessionWithDisc
     }),
   ) as SessionWithDisciplines[];
 }
+
+/**
+ * 날짜 범위 [startISO, endISO]의 sessions(+종목/태그/기술/미디어) 조회 → `SessionWithDisciplines[]`
+ * (F2 주간/아젠다 뷰 / 구현계획 §3). fetchDaySessions와 동일 셀렉트·평탄화의 **범위 버전**:
+ * `.eq('trained_on')` 대신 `.gte/.lte`로 범위를 잡고 trained_on→created_at 순으로 정렬한다.
+ * `startISO`/`endISO`는 'YYYY-MM-DD'(KST). 호출부가 `enabled: isAuthEnabled()`로 게이팅.
+ */
+export async function fetchRangeSessions(
+  startISO: string,
+  endISO: string,
+): Promise<SessionWithDisciplines[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('sessions')
+    .select(
+      '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))',
+    )
+    .gte('trained_on', startISO)
+    .lte('trained_on', endISO)
+    .order('trained_on', { ascending: true })
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(
+    ({ session_disciplines, taggables, session_techniques, media_links, ...s }) => ({
+      ...s,
+      disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
+      tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+      techniques: (session_techniques ?? [])
+        .filter((st) => st.techniques != null)
+        .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
+      media: (media_links ?? [])
+        .map((ml) => ml.media_assets)
+        .filter((m): m is NonNullable<typeof m> => m != null),
+    }),
+  ) as SessionWithDisciplines[];
+}

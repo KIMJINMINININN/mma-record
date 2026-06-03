@@ -5,19 +5,18 @@ import { EmptyState, PlusIcon } from '@/shared/ui';
 
 import { SessionCard } from './SessionCard';
 import { AddSessionButton } from './AddSessionButton';
+import { krDateHeader } from '../lib/calendar-grouping';
 
 /**
  * DayDetail — 선택 날짜의 세션 목록 (Design §7b / F2-AC3).
  *
- * 헤더: "5월 22일 (목)" + `+ 세션 추가` 버튼(스텁).
+ * 헤더: "5월 22일 (목)" + `+ 세션 추가` 버튼.
  * 본문: SessionCard 리스트. 비어 있으면 EmptyState("이 날의 첫 세션을 기록하세요").
  *
- * 표시 전용 + 한 개의 액션 버튼(현재 스텁) → 서버 컴포넌트로 둔다.
+ * 표시 전용 + 한 개의 액션 버튼 → 서버 컴포넌트로 둔다.
  * (날짜 상태/선택은 app 레벨 클라이언트 아일랜드가 소유 → 여기엔 props로 내려옴)
+ * 날짜 헤더 포맷은 calendar-grouping.krDateHeader로 통일(주/아젠다 뷰와 동일 표기).
  */
-
-/** dayjs 기본 로케일이 영어라 한글 요일은 직접 매핑(추가 로케일 의존 회피). */
-const KR_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
 export interface DayDetailProps {
   /** 헤더에 표시할 선택 날짜. */
@@ -27,9 +26,8 @@ export interface DayDetailProps {
 }
 
 export function DayDetail({ selectedDate, sessions }: DayDetailProps) {
-  const d = dayjs(selectedDate);
-  // "5월 22일 (목)" — 월/일은 dayjs, 요일은 KR_WEEKDAYS 매핑.
-  const dateLabel = `${d.month() + 1}월 ${d.date()}일 (${KR_WEEKDAYS[d.day()]})`;
+  // "5월 22일 (목)" — 주/아젠다 뷰와 동일한 krDateHeader로 표기 통일.
+  const dateLabel = krDateHeader(dayjs(selectedDate).format('YYYY-MM-DD'));
 
   return (
     <section aria-label={`${dateLabel} 세션`} className="flex flex-col">

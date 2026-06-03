@@ -39,6 +39,8 @@ export interface CalendarMonthGridProps {
   /** 표시 중인 달의 시작일(월 네비와 동기). */
   activeStartDate: Date;
   onActiveStartDateChange: (date: Date) => void;
+  /** 빈 날 셀 호버 `+`로 그 날짜 세션 추가(F2-AC4). 없으면 `+` 미표시. */
+  onQuickAdd?: (date: Date) => void;
 }
 
 /** dayjs 'YYYY-MM-DD' 키 — daySummaries 조회 및 오늘 비교의 단일 규칙. */
@@ -52,6 +54,7 @@ export function CalendarMonthGrid({
   onSelectDate,
   activeStartDate,
   onActiveStartDateChange,
+  onQuickAdd,
 }: CalendarMonthGridProps) {
   const todayKey = dayjs().format('YYYY-MM-DD');
   const selectedKey = dateKey(selectedDate);
@@ -82,9 +85,16 @@ export function CalendarMonthGrid({
       // 한글 요일(일~토) / 숫자(일자만) — dayjs로 통일.
       formatShortWeekday={(_locale, date) => ['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}
       formatDay={(_locale, date) => String(date.getDate())}
-      // 셀 콘텐츠: 종목 점 + 세션 수 (month view 한정).
+      // 셀 콘텐츠: 종목 점 + 세션 수 + 빈 날 빠른추가 (month view 한정).
       tileContent={({ date, view }: TileArgs) =>
-        view === 'month' ? <DayCellContent summary={daySummaries[dateKey(date)]} /> : null
+        view === 'month' ? (
+          <DayCellContent
+            summary={daySummaries[dateKey(date)]}
+            date={date}
+            onQuickAdd={onQuickAdd}
+            isNeighboringMonth={!dayjs(date).isSame(dayjs(activeStartDate), 'month')}
+          />
+        ) : null
       }
       // 셀 상태 클래스: 기록/빈 (오늘·선택은 react-calendar 내장 --now/--active 사용).
       tileClassName={({ date, view }: TileArgs) => {
