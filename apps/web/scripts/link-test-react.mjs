@@ -41,7 +41,40 @@ try {
   process.exit(0);
 }
 
-const targets = { react: pkgDir('react'), 'react-dom': pkgDir('react-dom') };
+const verOf = (d) => JSON.parse(fs.readFileSync(path.join(d, 'package.json'), 'utf8')).version;
+const reactDir = pkgDir('react');
+const reactVer = verOf(reactDir);
+
+// (1) react-dom 을 apps/web 에 co-locate (멱등) — clean `pnpm install` 후에도 동작.
+//   왜: node-linker=hoisted 라 react-dom(단일 후보)이 root 로 hoist 되는데, root 의 react peer
+//   는 apps/mobile 의 19.1.0 이다. vitest.config 는 apps/web/node_modules/react-dom 을 alias 하고
+//   이 react-dom 은 외부(비-inline) 모듈로 로드되어 자신의 위치 기준으로 react 를 resolve 한다.
+//   root 의 react-dom 을 쓰면 그 react(19.1.0)와 web 컴포넌트(reactVer)의 인스턴스가 갈려
+//   테스트에서 "act(...) 경고 + 렌더 null" 이 난다. 그래서 root 의 react-dom 을 apps/web 으로
+//   복사하고 nested node_modules(react/scheduler)를 제거해, react-dom 이
+//   apps/web/node_modules/react 단일 인스턴스를 walk-up 으로 공유하게 만든다.
+const webReactDom = path.join(webRoot, 'node_modules', 'react-dom');
+let webReactDomOk = false;
+try {
+  webReactDomOk =
+    verOf(webReactDom) === reactVer &&
+    !fs.existsSync(path.join(webReactDom, 'node_modules', 'react'));
+} catch {
+  webReactDomOk = false;
+}
+if (!webReactDomOk) {
+  fs.rmSync(webReactDom, { recursive: true, force: true }); // 깨진 로컬 제거 → root 로 resolve
+  const src = pkgDir('react-dom');
+  if (verOf(src) !== reactVer) {
+    throw new Error(`[link-test-react] react-dom@${verOf(src)} != react@${reactVer} — 설치 상태 확인 필요`);
+  }
+  fs.cpSync(src, webReactDom, { recursive: true, dereference: true });
+  fs.rmSync(path.join(webReactDom, 'node_modules'), { recursive: true, force: true });
+  console.log(`[link-test-react] co-located react-dom@${reactVer} -> node_modules/react-dom (nested react/scheduler 제거)`);
+}
+
+// (2) RTL 의 nested react/react-dom 을 web 의 copy 로 심볼릭 링크해 단일 인스턴스 강제.
+const targets = { react: reactDir, 'react-dom': webReactDom };
 const nm = path.join(rtlDir, 'node_modules');
 fs.mkdirSync(nm, { recursive: true });
 
