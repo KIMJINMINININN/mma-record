@@ -78,8 +78,8 @@ describe('isNavItemActive', () => {
 // ---------------------------------------------------------------------------
 
 describe('NAV_ITEMS', () => {
-  it('contains exactly 4 items', () => {
-    expect(NAV_ITEMS).toHaveLength(4);
+  it('contains exactly 5 items', () => {
+    expect(NAV_ITEMS).toHaveLength(5);
   });
 
   it('contains /calendar item', () => {
@@ -92,6 +92,10 @@ describe('NAV_ITEMS', () => {
 
   it('contains /search item', () => {
     expect(NAV_ITEMS.some((item) => item.href === '/search')).toBe(true);
+  });
+
+  it('contains /stats item', () => {
+    expect(NAV_ITEMS.some((item) => item.href === '/stats')).toBe(true);
   });
 
   it('contains /profile item', () => {
@@ -111,11 +115,12 @@ describe('NAV_ITEMS', () => {
     }
   });
 
-  it('hrefs match expected labels (캘린더, 기술, 검색, 프로필)', () => {
+  it('hrefs match expected labels (캘린더, 기술, 검색, 통계, 프로필)', () => {
     const hrefToLabel: Record<string, string> = {
       '/calendar': '캘린더',
       '/techniques': '기술',
       '/search': '검색',
+      '/stats': '통계',
       '/profile': '프로필',
     };
     for (const item of NAV_ITEMS) {

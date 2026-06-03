@@ -122,3 +122,13 @@ export function ChevronLeftIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** 통계 — 막대그래프(F10 통계 대시보드 nav). */
+export function StatsIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 21V11M10 21V5M16 21V8" />
+      <path d="M3 21h18" />
+    </svg>
+  );
+}
