@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { MediaThumb, parseYoutubeVideoId } from '@/entities/media';
+import { MediaThumb, parseYoutubeVideoId, safeExternalUrl } from '@/entities/media';
 import { Button } from '@/shared/ui';
 
 import {
@@ -41,7 +41,12 @@ export interface MediaPickerProps {
 const DEFAULT_MAX = 8;
 const ACCEPT = ALLOWED_UPLOAD_MIME.join(',');
 
-/** 선택 파일의 재생 길이(초)를 <video> 메타데이터에서 비동기로 읽는다. 실패 시 null. */
+/**
+ * 선택 파일의 재생 길이(정수 초)를 <video> 메타데이터에서 비동기로 읽는다.
+ * HTMLMediaElement.duration은 소수초라 **반드시 정수로 반올림**한다 — sign-upload 라우트와
+ * media_assets.duration_sec 스키마가 z.number().int()라 소수면 저장이 거부된다(positive라 최소 1로 클램프).
+ * 메타 부재/0/비유한 → null(길이 미상). 실패 시 null.
+ */
 function readVideoDuration(objectUrl: string): Promise<number | null> {
   return new Promise((resolve) => {
     const probe = document.createElement('video');
@@ -53,7 +58,7 @@ function readVideoDuration(objectUrl: string): Promise<number | null> {
     probe.onloadedmetadata = () => {
       const d = probe.duration;
       cleanup();
-      resolve(Number.isFinite(d) ? d : null);
+      resolve(Number.isFinite(d) && d > 0 ? Math.max(1, Math.round(d)) : null);
     };
     probe.onerror = () => {
       cleanup();
@@ -69,6 +74,7 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
   const [overLimit, setOverLimit] = useState<string | null>(null);
 
   const linkInputId = useId();
+  const linkErrId = useId();
   const linkInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,24 +104,37 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
     linkInputRef.current?.focus();
   }
 
-  // ── 유튜브 링크 추가 ──
-  function handleAddYoutube() {
+  // ── 링크 추가 — 유튜브면 youtube 초안, 아니면 http(s) 외부 링크 초안으로 자동 라우팅. ──
+  function handleAddLink() {
     setLinkError(null);
-    const videoId = parseYoutubeVideoId(linkInput);
-    if (!videoId) {
-      setLinkError('유효한 유튜브 링크가 아닙니다.');
-      return;
-    }
+    const raw = linkInput.trim();
+    if (raw === '') return;
     if (atMax) {
       toast.error(`미디어는 최대 ${max}개까지 추가할 수 있습니다.`);
       return;
     }
-    const dup = value.some((d) => d.kind === 'youtube' && d.videoId === videoId);
-    if (dup) {
-      setLinkError('이미 추가된 유튜브 영상입니다.');
+
+    const videoId = parseYoutubeVideoId(raw);
+    if (videoId) {
+      if (value.some((d) => d.kind === 'youtube' && d.videoId === videoId)) {
+        setLinkError('이미 추가된 유튜브 영상입니다.');
+        return;
+      }
+      onChange([...value, { kind: 'youtube', videoId }]);
+      setLinkInput('');
       return;
     }
-    onChange([...value, { kind: 'youtube', videoId }]);
+
+    const safe = safeExternalUrl(raw);
+    if (!safe) {
+      setLinkError('유튜브 링크 또는 http(s) URL을 입력하세요.');
+      return;
+    }
+    if (value.some((d) => d.kind === 'external' && d.url === safe)) {
+      setLinkError('이미 추가된 링크입니다.');
+      return;
+    }
+    onChange([...value, { kind: 'external', url: safe, title: null }]);
     setLinkInput('');
   }
 
@@ -216,12 +235,13 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  handleAddYoutube();
+                  handleAddLink();
                 }
               }}
-              placeholder="▶ 유튜브 링크 붙여넣기"
-              aria-label="유튜브 링크"
+              placeholder="▶ 유튜브 또는 링크 붙여넣기"
+              aria-label="유튜브 또는 외부 링크"
               aria-invalid={linkError != null}
+              aria-describedby={linkError ? linkErrId : undefined}
               disabled={atMax}
               className={[
                 'h-8 min-w-0 flex-1 rounded-xxs px-2.5',
@@ -236,13 +256,13 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
               variant="secondary"
               size="sm"
               disabled={atMax || linkInput.trim() === ''}
-              onClick={handleAddYoutube}
+              onClick={handleAddLink}
             >
               추가
             </Button>
           </div>
           {linkError && (
-            <p role="alert" className="text-body-xs-400 text-[var(--danger)]">
+            <p id={linkErrId} role="alert" className="text-body-xs-400 text-[var(--danger)]">
               <span aria-hidden="true">⚠ </span>
               {linkError}
             </p>
@@ -278,10 +298,21 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
       {value.length > 0 && (
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {value.map((draft, index) => (
-            <li key={draft.kind === 'youtube' ? `yt-${draft.videoId}` : `up-${draft.previewUrl}`} className="flex flex-col gap-1">
+            <li
+              key={
+                draft.kind === 'youtube'
+                  ? `yt-${draft.videoId}`
+                  : draft.kind === 'external'
+                    ? `ex-${draft.url}`
+                    : `up-${draft.previewUrl}`
+              }
+              className="flex flex-col gap-1"
+            >
               <div className="relative">
                 {draft.kind === 'youtube' ? (
                   <MediaThumb kind="youtube" youtubeVideoId={draft.videoId} />
+                ) : draft.kind === 'external' ? (
+                  <MediaThumb kind="external" />
                 ) : (
                   <MediaThumb
                     kind="upload"

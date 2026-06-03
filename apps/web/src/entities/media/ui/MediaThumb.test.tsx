@@ -59,25 +59,45 @@ describe('MediaThumb kind="youtube"', () => {
     expect(img?.src).toContain(VALID_ID);
   });
 
+  // 배지의 ▶는 장식(aria-hidden span)이라 텍스트가 두 노드로 분리됨 → 배지 span의 합성 textContent로 매칭.
+  const youtubeBadge = (container: HTMLElement) =>
+    within(container).getByText(
+      (_content, el) =>
+        el?.tagName === 'SPAN' &&
+        el.className.includes('absolute') &&
+        el.textContent === '▶ YouTube',
+    );
+
   it('shows YouTube badge text "▶ YouTube"', () => {
     const { container } = render(
       <MediaThumb kind="youtube" youtubeVideoId={VALID_ID} />,
     );
-    expect(within(container).getByText('▶ YouTube')).toBeTruthy();
+    expect(youtubeBadge(container)).toBeTruthy();
   });
 
   it('shows YouTube badge even without videoId (placeholder path)', () => {
     const { container } = render(
       <MediaThumb kind="youtube" youtubeVideoId={null} />,
     );
-    expect(within(container).getByText('▶ YouTube')).toBeTruthy();
+    expect(youtubeBadge(container)).toBeTruthy();
+  });
+
+  it('marks the badge ▶ glyph as decorative (aria-hidden)', () => {
+    const { container } = render(
+      <MediaThumb kind="youtube" youtubeVideoId={VALID_ID} />,
+    );
+    const glyph = within(container).getByText('▶');
+    expect(glyph.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('shows placeholder label "YouTube" when videoId is null', () => {
     const { container } = render(
       <MediaThumb kind="youtube" youtubeVideoId={null} />,
     );
-    expect(within(container).getByText('YouTube')).toBeTruthy();
+    // 배지에도 "YouTube"가 있으므로 placeholder 본문 라벨(span.text-body-xs-400)로 한정.
+    expect(
+      within(container).getByText('YouTube', { selector: 'span.text-body-xs-400' }),
+    ).toBeTruthy();
   });
 
   it('does not render an img when videoId is null', () => {

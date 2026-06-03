@@ -50,7 +50,7 @@ export async function fetchCalendarDaySummaries(
  * 문자열 리터럴 const라 Supabase 임베드 타입 추론은 그대로 보존된다.
  */
 const SESSION_EMBED_SELECT =
-  '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))';
+  '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, thumbnail_path, external_url, title))';
 
 /**
  * 선택 날짜의 sessions + 종목(N:M) 조회 → `SessionWithDisciplines[]` (PRD F2 / Develop §4.5).

@@ -15,6 +15,10 @@ export interface MediaAssetRef {
   kind: MediaKind;
   youtube_video_id: string | null;
   storage_path: string | null;
+  /** 업로드 첫프레임 썸네일 경로(서명해 poster로 — F5/AC5). */
+  thumbnail_path: string | null;
+  /** 외부 링크 URL(F5). */
+  external_url: string | null;
   title: string | null;
 }
 
@@ -41,7 +45,7 @@ export async function fetchTechniqueMedia(techniqueId: string): Promise<MediaAss
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from('media_links')
-    .select('media_assets(id, kind, youtube_video_id, storage_path, title)')
+    .select('media_assets(id, kind, youtube_video_id, storage_path, thumbnail_path, external_url, title)')
     .eq('technique_id', techniqueId);
   if (error) throw error;
   return (data ?? [])

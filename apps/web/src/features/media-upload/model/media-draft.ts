@@ -1,16 +1,15 @@
 /**
  * MediaDraft — 영속화 이전(클라이언트) 미디어 초안 모델 (F5 / Develop §5.3).
  *
- * 인프라 전 단계의 picker가 수집하는 "초안"이다. media_assets 행이 없으므로(인프라 후 생성)
- * 아직 logSession으로 흘러가지 않는다(media: [] 유지). youtube는 정규화된 videoId만,
- * upload는 선택 파일 + object-URL 프리뷰 + 동기 검증된 메타를 담는다.
+ * picker가 수집하는 "초안"이다. youtube는 정규화된 videoId만, upload는 선택 파일 + object-URL 프리뷰
+ * + 동기 검증된 메타를, external은 안전화된 http(s) URL을 담는다(F5).
+ * 저장(persistMediaDrafts)에서 upload는 sign-upload→PUT(+첫프레임 썸네일), external은 메타행만 만든다.
  *
- * external 링크는 P1 — 지금은 youtube/upload 두 종류만 수집한다(Design §9.1).
- *
- * SSoT: docs/mma/Develop.md §5.3
+ * SSoT: docs/mma/Develop.md §5.3 / §5.6
  */
 export type MediaDraft =
   | { kind: 'youtube'; videoId: string }
+  | { kind: 'external'; url: string; title: string | null }
   | {
       kind: 'upload';
       file: File;

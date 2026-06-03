@@ -132,3 +132,12 @@ export function StatsIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** 재생 — 채움 삼각형(F5 영상 썸네일 클릭-재생 오버레이). currentColor 채움. */
+export function PlayIcon(props: IconProps) {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}

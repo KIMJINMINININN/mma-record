@@ -14,7 +14,7 @@ import { DisciplineChip, usesBelt } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
 import { CLASS_TYPE_LABELS, type SessionWithDisciplines } from '@/entities/session';
 import { fetchTechniqueTagNames, TagChip } from '@/entities/tag';
-import { fetchTechniqueMedia, YoutubeEmbed, UploadVideo } from '@/entities/media';
+import { fetchTechniqueMedia, YoutubeFacade, UploadVideo, ExternalLinkCard } from '@/entities/media';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { Callout, ChevronLeftIcon, EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
 
@@ -153,13 +153,15 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {techniqueMedia.map((m) =>
                 m.kind === 'youtube' && m.youtube_video_id ? (
-                  <YoutubeEmbed
+                  <YoutubeFacade
                     key={m.id}
                     videoId={m.youtube_video_id}
                     title={m.title ?? undefined}
                   />
                 ) : m.kind === 'upload' && m.storage_path ? (
-                  <UploadVideo key={m.id} storagePath={m.storage_path} />
+                  <UploadVideo key={m.id} storagePath={m.storage_path} thumbnailPath={m.thumbnail_path} />
+                ) : m.kind === 'external' && m.external_url ? (
+                  <ExternalLinkCard key={m.id} url={m.external_url} title={m.title} />
                 ) : null,
               )}
             </div>

@@ -16,7 +16,8 @@ import { VideoPlayer } from './VideoPlayer';
  */
 export interface UploadVideoProps {
   storagePath: string;
-  poster?: string | null;
+  /** 첫프레임 썸네일 storage_path(있으면 서명해 video poster로). 같은 비공개 버킷이라 서명 필요(F5/AC4). */
+  thumbnailPath?: string | null;
   className?: string;
 }
 
@@ -29,7 +30,7 @@ function Frame({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function UploadVideo({ storagePath, poster, className }: UploadVideoProps) {
+export function UploadVideo({ storagePath, thumbnailPath, className }: UploadVideoProps) {
   const { data: src, isError } = useQuery({
     queryKey: ['media', 'signed', storagePath],
     queryFn: () => fetchSignedMediaUrl(storagePath),
@@ -38,7 +39,15 @@ export function UploadVideo({ storagePath, poster, className }: UploadVideoProps
     staleTime: (SIGNED_URL_TTL_SEC - 60) * 1000,
   });
 
+  // 썸네일도 같은 비공개 버킷 → 별도 서명(영상과 다른 path라 쿼리 키 충돌 없음). 실패해도 영상 재생엔 영향 없음.
+  const { data: poster } = useQuery({
+    queryKey: ['media', 'signed', thumbnailPath],
+    queryFn: () => fetchSignedMediaUrl(thumbnailPath as string),
+    enabled: isAuthEnabled() && !!thumbnailPath,
+    staleTime: (SIGNED_URL_TTL_SEC - 60) * 1000,
+  });
+
   if (isError) return <Frame>영상을 불러올 수 없습니다</Frame>;
   if (!src) return <Frame>영상 불러오는 중…</Frame>;
-  return <VideoPlayer src={src} poster={poster} className={className} />;
+  return <VideoPlayer src={src} poster={poster ?? null} className={className} />;
 }

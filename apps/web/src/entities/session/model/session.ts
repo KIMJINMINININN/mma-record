@@ -66,6 +66,10 @@ export type SessionMediaRef = {
   youtube_video_id: string | null;
   /** kind='upload'면 Storage 경로(재생 시 서명 URL 발급). */
   storage_path: string | null;
+  /** kind='upload' 첫프레임 썸네일 Storage 경로(있으면 poster로 서명 — F5/AC5). */
+  thumbnail_path: string | null;
+  /** kind='external'면 외부 링크 URL(F5). */
+  external_url: string | null;
   title: string | null;
 };
 

@@ -68,7 +68,7 @@ export async function fetchTechniqueSessions(
   const { data, error } = await supabase
     .from('session_techniques')
     .select(
-      'sessions(*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title)))',
+      'sessions(*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, thumbnail_path, external_url, title)))',
     )
     .eq('technique_id', techniqueId);
   if (error) throw error;

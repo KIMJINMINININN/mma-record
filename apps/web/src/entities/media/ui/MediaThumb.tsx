@@ -89,7 +89,7 @@ export function MediaThumb({
           <PlaceholderBody label="YouTube" />
         )}
         <span className="absolute right-1.5 top-1.5 rounded-xxs bg-[var(--primary)] px-1.5 py-0.5 text-button-xs text-[var(--text-on-primary)]">
-          ▶ YouTube
+          <span aria-hidden="true">▶</span> YouTube
         </span>
       </div>
     );
