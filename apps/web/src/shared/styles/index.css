@@ -14,6 +14,11 @@
 @import "./tailwind-utilities.css";
 @import "./app-components.css";
 
+/* shadcn/ui — Radix 애니메이션 + 토큰 브리지 (격리 존 shared/ui/shadcn 전용).
+   브리지는 tailwind-theme.css(리셋) 뒤에 와야 @theme inline 매핑이 최종 적용된다. */
+@import "tw-animate-css";
+@import "./shadcn-bridge.css";
+
 /* Tailwind 유틸리티가 의존하는 최소 reset (preflight 대체) —
    반드시 @layer base 안에 둔다. 레이어 밖이면 모든 레이어를 이겨서 border 유틸리티를 죽인다. */
 @layer base {

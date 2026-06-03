@@ -1,0 +1,84 @@
+/* =============================================================================
+   shadcn/ui to MatLog design token bridge
+   -----------------------------------------------------------------------------
+   shadcn 컴포넌트가 기대하는 토큰명(--background, --card, --ring 등)을
+   기존 의미 토큰(tailwind-theme.css 의 surface, text, border 계열)에 매핑한다.
+
+   - :root 별칭(--background 등)은 shadcn 이 var() 로 직접 참조할 때를 위해 유지.
+     RHS(surface 계열 등)가 이미 [data-theme] 로 자동 전환되므로 다크는 함께 따라온다.
+   - 비-inline @theme 로 color, radius 토큰을 등록해야 bg, text, rounded 유틸이 생성된다.
+
+   주의 1: 반드시 비-inline @theme 사용. 이 프로젝트는 granular import + color 리셋
+          (color 계열을 initial 로) 환경이라 shadcn 기본인 inline @theme 은 유틸을
+          생성하지 못한다(실측 확인). 비-inline 은 정상.
+   주의 2: 주석에 asterisk 바로 뒤 slash 시퀀스를 쓰지 말 것 — CSS 주석이 조기 종료되어
+          파일이 깨진다(과거 실수). glob 패턴은 쉼표로 나열한다.
+
+   - --primary 는 tailwind-theme.css :root 에 이미 존재(red-500) 하므로 재정의 안 함.
+   - shadcn 은 shared/ui/shadcn 격리 존 전용 이므로 기존 프리미티브에 영향 없음.
+
+   매핑 취향 결정(사용자 승인): radius=8px, accent=중립 회색, ring=빨강.
+   ========================================================================== */
+:root {
+  --background: var(--surface-app);
+  --foreground: var(--text-default);
+
+  --card: var(--surface-base);
+  --card-foreground: var(--text-default);
+
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--text-default);
+
+  /* --primary 는 재정의하지 않음(기존 red-500 그대로 사용) */
+  --primary-foreground: var(--text-on-primary);
+
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--text-default);
+
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--text-muted);
+
+  --accent: var(--surface-sunken);
+  --accent-foreground: var(--text-strong);
+
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text-on-primary);
+
+  --border: var(--border-default);
+  --input: var(--border-strong);
+  --ring: var(--primary);
+
+  --radius: 0.5rem; /* 8px */
+}
+
+/* shadcn 토큰을 Tailwind 색/라운드 유틸로 노출(비-inline @theme).
+   tailwind-theme.css 의 color 및 radius 리셋(initial) 뒤에 import 되므로(index.css)
+   이 선언들이 병합되어 최종 적용된다. */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* shadcn 컴포넌트가 쓰는 rounded-sm, rounded-md, rounded-lg, rounded-xl 파생.
+     기존 radius-xxs..xxl 와 키가 겹치지 않는다. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}

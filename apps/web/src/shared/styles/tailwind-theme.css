@@ -92,8 +92,8 @@
   --color-disc-striking: #c2410c;
   --color-disc-mma: #5b21b6;
 
-  /* Spacing 기준 (유지) */
-  --spacing: 1px;
+  /* Spacing 기준 — Tailwind 기본(0.25rem). 컴포넌트가 기본 스케일(h-10=40px 등)로 작성됨. */
+  --spacing: 0.25rem;
 
   /* Border Radius (유지) */
   --radius-xxs: 6px;
