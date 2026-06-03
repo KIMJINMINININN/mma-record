@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+
+// 날짜별 AddSessionButton이 zustand 스토어 훅을 쓰므로 hoisted 모노레포에서 mock(공통 패턴).
+const openMock = vi.fn();
+vi.mock('@/shared/model/session-editor-store', () => ({
+  useSessionEditorStore: (selector: (s: { open: typeof openMock }) => unknown) =>
+    selector({ open: openMock }),
+}));
 
 import { CalendarAgendaView } from './CalendarAgendaView';
 import type { SessionWithDisciplines } from '@/entities/session';
@@ -51,5 +58,7 @@ describe('CalendarAgendaView', () => {
     const headings = screen.getAllByRole('heading', { level: 2 });
     expect(headings[0]).toHaveTextContent('6월 10일');
     expect(headings[1]).toHaveTextContent('6월 1일');
+    // 날짜 그룹마다 추가 버튼(주 뷰 패리티) — 그룹 2개
+    expect(screen.getAllByRole('button', { name: /추가/ })).toHaveLength(2);
   });
 });

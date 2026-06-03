@@ -4,6 +4,7 @@ import type { SessionWithDisciplines } from '@/entities/session';
 import { EmptyState, PlusIcon } from '@/shared/ui';
 
 import { SessionCard } from './SessionCard';
+import { AddSessionButton } from './AddSessionButton';
 import { groupSessionsByDateDesc, krDateHeader } from '../lib/calendar-grouping';
 
 /**
@@ -40,7 +41,11 @@ export function CalendarAgendaView({ monthISO, sessions }: CalendarAgendaViewPro
       {groups.map((group) => (
         // 날짜 그룹은 h2(페이지 h1 아래 콘텐츠 섹션)로 헤딩 위계를 잇는다. region 랜드마크는 쓰지 않음.
         <div key={group.dateISO}>
-          <h2 className="mb-2 text-heading-xs text-[var(--text-strong)]">{krDateHeader(group.dateISO)}</h2>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-heading-xs text-[var(--text-strong)]">{krDateHeader(group.dateISO)}</h2>
+            {/* 주 뷰와 패리티 — 그 날짜로 바로 세션 추가(키보드/SR 접근 경로). */}
+            <AddSessionButton date={dayjs(group.dateISO).toDate()} variant="secondary" size="sm" label="추가" />
+          </div>
           <div className="space-y-3">
             {group.sessions.map((session) => (
               <SessionCard key={session.id} session={session} />

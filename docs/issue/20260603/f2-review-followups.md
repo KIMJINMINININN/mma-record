@@ -11,12 +11,16 @@
 - **LOW — 주 '기록 없음' 대비/보더 토큰**: `--text-disabled`(≈2.86:1)→`--text-muted`, 보더 `--border-subtle`→`--border-default`(아젠다/DayDetail과 통일). `CalendarWeekView`.
 - **랜드마크 노이즈**: 주/아젠다 날짜 블록 `<section aria-label>`(7 region)→`<div>`(h2가 구조 제공). 두 파일.
 
-## ⬜ 미처리 — LOW (선택)
-1. **아젠다 뷰에 날짜별 추가 버튼 없음** (주 뷰는 날짜마다 AddSessionButton 있음) — 키보드/SR이 아젠다에서 특정 날짜에 바로 추가 불가(상단 '세션' 버튼은 selectedDate 프리셋). 추가 시 AgendaView가 zustand 스토어에 결합 → 테스트에 스토어 mock 필요. 아젠다는 복습 지향이라 보류. `CalendarAgendaView.tsx`.
-2. **fetchDaySessions/fetchRangeSessions 셀렉트+평탄화 중복** (드리프트 위험) — `SESSION_EMBED_SELECT` const + `mapSessionRow`로 추출 권장(인라인 유지 시 추론 보존). 현재 "동일 셀렉트" 주석만. `calendar-queries.ts`.
-3. **range 쿼리(주/아젠다) PostgREST 1000행 캡 무가드** — 월/주 범위는 현실적으로 <1000이라 무해. 방어 시 `.limit(1000)` 명시 또는 아젠다는 trained_on DESC 정렬로 최신 우선. `calendar-queries.ts`.
-4. **주 쿼리 키가 weekStartISO만** — `end=start+6` 불변식에 의존. 자기설명 위해 키에 endISO 포함 또는 주석. 저우선.
-5. **활성 탭 shadow-e1 다크모드서 거의 안 보임** — 다크 대응 `shadow-[var(--shadow-card)]`로 교체 검토(기능 무관, 표면+텍스트로 이미 구분).
-6. **주 뷰 today 빨강 이중**(날짜 숫자 빨강 + '오늘' 칩) — 숫자는 `--text-strong`로 두고 '오늘' 칩만 빨강 신호로 단일화 검토.
-7. **aria-hidden + 의 죽은 title 속성** — 마우스 툴팁용으로 유지, 무해.
-8. **day-detail 배럴이 순수 lib + 클라이언트 컴포넌트 동시 export** — 향후 서버 소비자 대비 `@/widgets/day-detail/lib` 서브패스 분리 검토(현재 둘 다 클라이언트 소비라 무해).
+## ✅ 처리 완료 — LOW (2026-06-03 후속 #2)
+1. **아젠다 날짜별 추가 버튼** → 각 날짜 그룹 헤더에 AddSessionButton 추가(주 뷰 패리티, 키보드/SR 추가 경로). 테스트에 스토어 mock + 버튼 수 단언. `CalendarAgendaView.tsx`.
+2. **select 문자열 중복** → `SESSION_EMBED_SELECT` const로 단일화(fetchDaySessions/fetchRangeSessions 공유, 추론 보존 — tsc 확인). `calendar-queries.ts`.
+4. **주 쿼리 키** → `['calendar','week', weekStartISO, weekEndISO]`로 endISO 포함(자기설명).
+5. **활성 탭 그림자** → `shadow-e1`→`shadow-[var(--shadow-card)]`(다크 대응).
+6. **주 today 빨강 이중** → 날짜 숫자 기본색, '오늘' 칩만 빨강 신호로 단일화. `CalendarWeekView.tsx`.
+8. **배럴 lib+컴포넌트 혼재** → index.ts에 "서버는 ./lib 직접 import" 주석. `day-detail/index.ts`.
+
+검증: 905 테스트·tsc·lint·build green.
+
+### 의도적 미반영(결함 아님)
+3. **range 쿼리 1000행 캡** — 월/주 범위는 현실적으로 <1000이라 무해(전체기간 집계인 F10과 달리 범위 한정). 필요 시 `.limit(1000)` 명시.
+7. **aria-hidden + 의 title** — 마우스 툴팁용 유지, 무해.

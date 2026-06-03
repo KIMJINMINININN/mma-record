@@ -34,10 +34,9 @@ export function CalendarWeekView({ weekStartISO, sessionsByDate }: CalendarWeekV
           <div key={day.dateISO}>
             <header className="mb-2 flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-1.5 text-heading-xs text-[var(--text-strong)]">
-                <span className={day.isToday ? 'text-[var(--primary)]' : undefined}>
-                  {day.dayOfMonth}일
-                </span>
+                <span>{day.dayOfMonth}일</span>
                 <span className="text-body-s-400 text-[var(--text-muted)]">({day.weekdayKR})</span>
+                {/* 오늘 신호는 '오늘' 칩 하나로 — 날짜 숫자까지 빨강으로 이중 표시하지 않음. */}
                 {day.isToday && (
                   <span className="rounded-xxs bg-[var(--primary-soft)] px-1.5 py-0.5 text-body-xxs-500 text-[var(--primary)]">
                     오늘

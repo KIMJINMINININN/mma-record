@@ -110,7 +110,7 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
   });
   // 주: 주 범위 sessions → 날짜별 그룹맵 → WeekView.
   const { data: weekSessions = [] } = useQuery({
-    queryKey: ['calendar', 'week', weekStartISO],
+    queryKey: ['calendar', 'week', weekStartISO, weekEndISO],
     queryFn: () => fetchRangeSessions(weekStartISO, weekEndISO),
     enabled: authed && viewMode === 'week',
   });
@@ -221,7 +221,7 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
                   onClick={() => setViewMode(t.id)}
                   className={`inline-flex h-7 items-center rounded-xxs px-2.5 text-button-xs outline-none focus-visible:shadow-[var(--ring-focus)] ${
                     selected
-                      ? 'bg-[var(--surface-base)] text-[var(--text-strong)] shadow-e1'
+                      ? 'bg-[var(--surface-base)] text-[var(--text-strong)] shadow-[var(--shadow-card)]'
                       : 'text-[var(--text-default)] pointer-hover:text-[var(--text-strong)]'
                   }`}
                 >

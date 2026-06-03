@@ -45,6 +45,14 @@ export async function fetchCalendarDaySummaries(
 }
 
 /**
+ * sessions + 종목/태그/기술/미디어 임베드 셀렉트 — fetchDaySessions(단일 날짜)와
+ * fetchRangeSessions(범위)가 공유한다(동일 셀렉트가 두 곳에서 어긋나지 않도록 단일 출처).
+ * 문자열 리터럴 const라 Supabase 임베드 타입 추론은 그대로 보존된다.
+ */
+const SESSION_EMBED_SELECT =
+  '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))';
+
+/**
  * 선택 날짜의 sessions + 종목(N:M) 조회 → `SessionWithDisciplines[]` (PRD F2 / Develop §4.5).
  * `dateISO` 는 'YYYY-MM-DD'. 임베드 셀렉트 `session_disciplines(discipline)` 는
  * sessions↔session_disciplines FK(session_disciplines_session_id_fkey)로 중첩 배열을 타입 추론한다.
@@ -53,9 +61,7 @@ export async function fetchDaySessions(dateISO: string): Promise<SessionWithDisc
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from('sessions')
-    .select(
-      '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))',
-    )
+    .select(SESSION_EMBED_SELECT)
     .eq('trained_on', dateISO)
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -89,9 +95,7 @@ export async function fetchRangeSessions(
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from('sessions')
-    .select(
-      '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))',
-    )
+    .select(SESSION_EMBED_SELECT)
     .gte('trained_on', startISO)
     .lte('trained_on', endISO)
     .order('trained_on', { ascending: true })
