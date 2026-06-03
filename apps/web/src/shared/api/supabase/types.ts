@@ -230,6 +230,7 @@ export type Database = {
           gym: string | null
           id: string
           intensity: number | null
+          is_favorite: boolean
           memo_md: string | null
           partners: string | null
           rating: number | null
@@ -246,6 +247,7 @@ export type Database = {
           gym?: string | null
           id?: string
           intensity?: number | null
+          is_favorite?: boolean
           memo_md?: string | null
           partners?: string | null
           rating?: number | null
@@ -262,6 +264,7 @@ export type Database = {
           gym?: string | null
           id?: string
           intensity?: number | null
+          is_favorite?: boolean
           memo_md?: string | null
           partners?: string | null
           rating?: number | null
@@ -350,6 +353,7 @@ export type Database = {
           details_md: string | null
           discipline: Database["public"]["Enums"]["discipline"]
           id: string
+          is_favorite: boolean
           level: Database["public"]["Enums"]["skill_level"] | null
           name: string
           position: Database["public"]["Enums"]["position_kind"] | null
@@ -367,6 +371,7 @@ export type Database = {
           details_md?: string | null
           discipline: Database["public"]["Enums"]["discipline"]
           id?: string
+          is_favorite?: boolean
           level?: Database["public"]["Enums"]["skill_level"] | null
           name: string
           position?: Database["public"]["Enums"]["position_kind"] | null
@@ -384,6 +389,7 @@ export type Database = {
           details_md?: string | null
           discipline?: Database["public"]["Enums"]["discipline"]
           id?: string
+          is_favorite?: boolean
           level?: Database["public"]["Enums"]["skill_level"] | null
           name?: string
           position?: Database["public"]["Enums"]["position_kind"] | null

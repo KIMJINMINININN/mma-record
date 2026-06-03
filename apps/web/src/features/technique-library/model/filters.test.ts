@@ -23,6 +23,7 @@ const BASE: Technique = {
   belt: 'blue',
   belt_stripes: 0,
   level: null,
+  is_favorite: false,
   description_md: null,
   details_md: null,
   visibility: 'private',
@@ -81,6 +82,7 @@ describe('DEFAULT_TECHNIQUE_FILTERS', () => {
       position: null,
       belt: null,
       level: null,
+      favoriteOnly: false,
       sort: 'recent',
     });
   });
@@ -115,6 +117,10 @@ describe('isAnyFilterActive', () => {
     expect(isAnyFilterActive({ ...DEFAULT_TECHNIQUE_FILTERS, level: 'beginner' })).toBe(true);
   });
 
+  it('returns true when favoriteOnly is set', () => {
+    expect(isAnyFilterActive({ ...DEFAULT_TECHNIQUE_FILTERS, favoriteOnly: true })).toBe(true);
+  });
+
   it('returns false when only sort differs (sort is not a filter)', () => {
     const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, sort: 'name' };
     expect(isAnyFilterActive(f)).toBe(false);
@@ -126,13 +132,14 @@ describe('isAnyFilterActive', () => {
 // ---------------------------------------------------------------------------
 
 describe('clearFilters', () => {
-  it('nulls all five filter fields', () => {
+  it('clears all filter fields (incl. favoriteOnly)', () => {
     const active: TechniqueFilters = {
       discipline: 'bjj_gi',
       category: 'submission',
       position: 'mount',
       belt: 'blue',
       level: 'beginner',
+      favoriteOnly: true,
       sort: 'recent',
     };
     const result = clearFilters(active);
@@ -141,6 +148,7 @@ describe('clearFilters', () => {
     expect(result.position).toBeNull();
     expect(result.belt).toBeNull();
     expect(result.level).toBeNull();
+    expect(result.favoriteOnly).toBe(false);
   });
 
   it('preserves the sort field', () => {
@@ -158,6 +166,7 @@ describe('clearFilters', () => {
       position: 'standing',
       belt: 'white',
       level: 'intermediate',
+      favoriteOnly: true,
       sort: 'name',
     };
     const snapshot = { ...original };
@@ -278,13 +287,14 @@ describe('filterAndSortTechniques', () => {
       expect(result[0].id).toBe(BASE.id);
     });
 
-    it('all five filters narrow correctly', () => {
+    it('all filters narrow correctly', () => {
       const f: TechniqueFilters = {
         discipline: 'bjj_gi',
         category: 'submission',
         position: 'mount',
         belt: 'blue',
         level: null, // bjj_gi uses belt, not level → null means "include all"
+        favoriteOnly: false,
         sort: 'recent',
       };
       const result = filterAndSortTechniques(LIST, f);
@@ -336,6 +346,43 @@ describe('filterAndSortTechniques', () => {
       const result = filterAndSortTechniques(LIST, f);
       for (let i = 0; i < result.length - 1; i++) {
         expect(result[i].created_at >= result[i + 1].created_at).toBe(true);
+      }
+    });
+  });
+
+  describe('favorites: favoriteOnly filter + sort', () => {
+    const FAV: Technique = makeTechnique({
+      id: '00000000-0000-0000-0000-000000000030',
+      name: '즐겨찾기 기술',
+      is_favorite: true,
+      created_at: '2024-01-15T00:00:00.000Z',
+    });
+    const FAV_LIST = [BASE, SWEEP, TAKEDOWN, PUNCH, FAV]; // only FAV is favorited
+
+    it('favoriteOnly=true returns only favorited techniques', () => {
+      const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, favoriteOnly: true };
+      const result = filterAndSortTechniques(FAV_LIST, f);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(FAV.id);
+    });
+
+    it('favoriteOnly=false includes non-favorited', () => {
+      const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, favoriteOnly: false };
+      expect(filterAndSortTechniques(FAV_LIST, f)).toHaveLength(FAV_LIST.length);
+    });
+
+    it("sort='favorites' pins favorited first", () => {
+      const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, sort: 'favorites' };
+      const result = filterAndSortTechniques(FAV_LIST, f);
+      expect(result[0].id).toBe(FAV.id);
+      expect(result.slice(1).every((t) => !t.is_favorite)).toBe(true);
+    });
+
+    it("sort='favorites' breaks ties by created_at desc", () => {
+      const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, sort: 'favorites' };
+      const tail = filterAndSortTechniques(FAV_LIST, f).slice(1); // non-favorited tail
+      for (let i = 0; i < tail.length - 1; i++) {
+        expect(tail[i].created_at >= tail[i + 1].created_at).toBe(true);
       }
     });
   });

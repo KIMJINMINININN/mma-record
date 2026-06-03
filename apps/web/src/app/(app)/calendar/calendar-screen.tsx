@@ -14,7 +14,7 @@ import {
 } from '@/widgets/day-detail';
 import { fetchCalendarDaySummaries, fetchDaySessions, fetchRangeSessions } from '@/entities/session';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
-import { ChevronLeftIcon, IconButton, PlusIcon, TodayIcon } from '@/shared/ui';
+import { ChevronLeftIcon, IconButton, PlusIcon, StarFilledIcon, StarIcon, TodayIcon } from '@/shared/ui';
 import { useSessionEditorStore } from '@/shared/model/session-editor-store';
 
 /**
@@ -70,6 +70,8 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
     dayjs(initialDate).startOf('month').toDate(),
   );
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
+  // 즐겨찾기만 보기(PRD §9 P1) — 세션 목록(월 상세/주/아젠다)에 적용하는 기간내 필터.
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const tabRefs = useRef<Record<CalendarViewMode, HTMLButtonElement | null>>({
     month: null,
     week: null,
@@ -121,7 +123,16 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
     enabled: authed && viewMode === 'agenda',
   });
 
-  const weekByDate = groupSessionsByDateMap(weekSessions);
+  // "즐겨찾기만" 기간내 필터 — 세 세션 목록(월 상세/주/아젠다)에 동일 적용. 월 그리드 점/카운트는
+  // calendar_day_summary(별도 소스)라 영향 없음(요약 뷰는 전체 집계 유지 — 문서화된 의도).
+  const favFilter = (list: typeof sessions) => (favoritesOnly ? list.filter((s) => s.is_favorite) : list);
+  const daySessions = favFilter(sessions);
+  const weekFiltered = favFilter(weekSessions);
+  const weekByDate = groupSessionsByDateMap(weekFiltered);
+  const agenda = favFilter(agendaSessions);
+  // 활성 뷰의 (즐겨찾기 필터 후) 세션 수 — 토글 시 SR 안내용(WCAG 4.1.3).
+  const activeCount =
+    viewMode === 'week' ? weekFiltered.length : viewMode === 'agenda' ? agenda.length : daySessions.length;
 
   // ── 네비게이션 (모드별) ────────────────────────────────────────────────
   // 월 네비 — 표시 달과 선택일을 **함께** 이동(선택일은 새 달의 같은 일자, 말일 초과 시 클램프).
@@ -231,6 +242,29 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
             })}
           </div>
 
+          {/* 즐겨찾기만 — 세션 목록(월 상세/주/아젠다)을 즐겨찾기로 거름(PRD §9 P1). aria-pressed 토글. */}
+          <button
+            type="button"
+            aria-label="즐겨찾기만 보기"
+            aria-pressed={favoritesOnly}
+            onClick={() => setFavoritesOnly((v) => !v)}
+            className={[
+              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s',
+              'outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+              'focus-visible:shadow-[var(--ring-focus)]',
+              favoritesOnly
+                ? 'bg-[var(--surface-sunken)] text-[var(--primary)]'
+                : 'text-[var(--text-default)] pointer-hover:bg-[var(--surface-sunken)]',
+            ].join(' ')}
+          >
+            {favoritesOnly ? (
+              <StarFilledIcon width={16} height={16} />
+            ) : (
+              <StarIcon width={16} height={16} />
+            )}
+            즐겨찾기
+          </button>
+
           {/* 세션 에디터 오픈(F3) — 선택 날짜 프리셋. 전역 FAB와 함께 진입점. */}
           <button
             type="button"
@@ -242,6 +276,11 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
           </button>
         </div>
       </div>
+
+      {/* 즐겨찾기만 토글 시 결과 수 변화를 SR에 알린다(WCAG 4.1.3). 끄면 비워 잡음 방지. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {favoritesOnly ? `즐겨찾기만 보기 · 세션 ${activeCount}개` : ''}
+      </p>
 
       {/* ── 본문(탭 패널): 뷰모드에 따라 월 그리드+상세 / 주 리스트 / 아젠다 ── */}
       <div role="tabpanel" id="calendar-panel" tabIndex={0} aria-labelledby={`cal-tab-${viewMode}`} className="outline-none">
@@ -257,7 +296,7 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
               onQuickAdd={quickAdd}
             />
             {/* Day Detail(widget) — sessions: AUTH ON이면 실데이터, OFF면 빈 배열 → EmptyState */}
-            <DayDetail selectedDate={selectedDate} sessions={sessions} />
+            <DayDetail selectedDate={selectedDate} sessions={daySessions} />
           </div>
         )}
 
@@ -266,7 +305,7 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
         )}
 
         {viewMode === 'agenda' && (
-          <CalendarAgendaView monthISO={monthKey} sessions={agendaSessions} />
+          <CalendarAgendaView monthISO={monthKey} sessions={agenda} />
         )}
       </div>
     </div>

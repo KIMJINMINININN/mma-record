@@ -141,3 +141,29 @@ export function PlayIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** 즐겨찾기 — 빈 별(미즐겨찾기). 외곽선만(currentColor stroke). */
+export function StarIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 2.5l1.9 6.1 6.4 0-5.2 3.8 2 6.4-5.1-3.8-5.1 3.8 2-6.4-5.2-3.8 6.4 0z" />
+    </svg>
+  );
+}
+
+/** 즐겨찾기 — 채운 별(즐겨찾기됨). currentColor 채움(같은 path, fill). */
+export function StarFilledIcon(props: IconProps) {
+  return (
+    <svg
+      width={24}
+      height={24}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      strokeLinejoin="round"
+      aria-hidden
+      {...props}
+    >
+      <path d="M12 2.5l1.9 6.1 6.4 0-5.2 3.8 2 6.4-5.1-3.8-5.1 3.8 2-6.4-5.2-3.8 6.4 0z" />
+    </svg>
+  );
+}

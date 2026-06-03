@@ -15,7 +15,7 @@ import {
   type PositionKind,
   type TechniqueCategory,
 } from '@/shared/model/enums';
-import { Button } from '@/shared/ui';
+import { Button, StarFilledIcon, StarIcon } from '@/shared/ui';
 
 import {
   clearFilters,
@@ -138,6 +138,29 @@ export function TechniqueFilterBar({ filters, onChange }: TechniqueFilterBarProp
         ))}
       </select>
 
+      {/* 즐겨찾기만 — 토글(★). aria-pressed 로 on/off. clearFilters/isAnyFilterActive 에 포함. */}
+      <button
+        type="button"
+        aria-label="즐겨찾기만 보기"
+        aria-pressed={filters.favoriteOnly}
+        onClick={() => onChange({ ...filters, favoriteOnly: !filters.favoriteOnly })}
+        className={[
+          'inline-flex h-8 items-center gap-1 rounded-xxs border px-2.5 text-button-s',
+          'outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+          'focus-visible:shadow-[var(--ring-focus)]',
+          filters.favoriteOnly
+            ? 'border-[var(--primary)] bg-[var(--surface-sunken)] text-[var(--primary)]'
+            : 'border-[var(--border-strong)] text-[var(--text-default)] pointer-hover:border-[var(--border-default)]',
+        ].join(' ')}
+      >
+        {filters.favoriteOnly ? (
+          <StarFilledIcon width={14} height={14} />
+        ) : (
+          <StarIcon width={14} height={14} />
+        )}
+        즐겨찾기
+      </button>
+
       {/* 정렬 (분리 — 필터 토글에 영향 없음) */}
       <select
         aria-label="정렬"
@@ -147,6 +170,7 @@ export function TechniqueFilterBar({ filters, onChange }: TechniqueFilterBarProp
       >
         <option value="recent">최근순</option>
         <option value="name">이름순</option>
+        <option value="favorites">즐겨찾기순</option>
       </select>
 
       {anyActive && (

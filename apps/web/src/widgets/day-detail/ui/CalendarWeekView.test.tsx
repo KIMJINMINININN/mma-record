@@ -10,6 +10,11 @@ vi.mock('@/shared/model/session-editor-store', () => ({
     selector({ open: openMock }),
 }));
 
+// SessionCard 가 SessionFavoriteStar(클라 아일랜드: useQueryClient + 'use server' 체인)를 렌더 → 스텁.
+vi.mock('@/features/session-favorite', () => ({
+  SessionFavoriteStar: () => null,
+}));
+
 import { CalendarWeekView } from './CalendarWeekView';
 import type { SessionWithDisciplines } from '@/entities/session';
 
@@ -26,6 +31,7 @@ function session(id: string, trained_on: string): SessionWithDisciplines {
     partners: null,
     memo_md: null,
     rating: null,
+    is_favorite: false,
     visibility: 'private',
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-01-01T00:00:00.000Z',

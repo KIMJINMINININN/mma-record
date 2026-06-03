@@ -15,6 +15,7 @@ import {
   type TechniqueFilters,
 } from '../model/filters';
 import { TechniqueCard } from './TechniqueCard';
+import { TechniqueFavoriteStar } from './TechniqueFavoriteStar';
 import { TechniqueFilterBar } from './TechniqueFilterBar';
 
 /**
@@ -52,10 +53,23 @@ export function TechniqueLibrary() {
     <div className="flex flex-col gap-4">
       <TechniqueFilterBar filters={filters} onChange={setFilters} />
 
+      {/* 필터/정렬(즐겨찾기 토글 포함) 변경 시 결과 수 변화를 SR에 알린다(WCAG 4.1.3). */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {anyActive ? `필터 결과 ${visible.length}개 기술` : `기술 ${visible.length}개`}
+      </p>
+
       {visible.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((t) => (
-            <TechniqueCard key={t.id} technique={t} />
+            // 카드 전체가 <Link>라 별표 버튼을 안에 못 넣는다(중첩 인터랙티브) → 카드 밖 절대배치 오버레이.
+            <div key={t.id} className="relative">
+              <TechniqueCard technique={t} />
+              <TechniqueFavoriteStar
+                techniqueId={t.id}
+                isFavorite={t.is_favorite}
+                className="absolute right-1.5 top-1.5 bg-[var(--surface-raised)] shadow-[var(--shadow-card)]"
+              />
+            </div>
           ))}
         </div>
       ) : anyActive ? (

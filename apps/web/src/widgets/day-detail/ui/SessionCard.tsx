@@ -1,4 +1,5 @@
 import { MarkdownView } from '@/shared/ui';
+import { SessionFavoriteStar } from '@/features/session-favorite';
 import { DisciplineChip } from '@/entities/discipline';
 import { TagChip } from '@/entities/tag';
 import { YoutubeFacade, UploadVideo, ExternalLinkCard } from '@/entities/media';
@@ -84,6 +85,13 @@ export function SessionCard({ session }: SessionCardProps) {
             </>
           )}
         </span>
+
+        {/* 즐겨찾기 별표 — 우측 정렬(PRD §9 P1). 세션 단일 토글 클라 아일랜드. */}
+        <SessionFavoriteStar
+          sessionId={session.id}
+          isFavorite={session.is_favorite}
+          className="ml-auto"
+        />
       </header>
 
       {/* 메타 — 체육관 · 파트너 */}

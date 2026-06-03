@@ -4,6 +4,7 @@
  */
 export * from './button/Button';
 export * from './icon-button/IconButton';
+export * from './favorite-star/FavoriteStar';
 export * from './input/Input';
 export * from './empty-state/EmptyState';
 export * from './skeleton/Skeleton';

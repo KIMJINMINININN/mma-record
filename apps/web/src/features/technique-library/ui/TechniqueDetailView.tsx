@@ -19,6 +19,8 @@ import { fetchTechniqueMedia, YoutubeFacade, UploadVideo, ExternalLinkCard } fro
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { Callout, ChevronLeftIcon, EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
 
+import { TechniqueFavoriteStar } from './TechniqueFavoriteStar';
+
 /**
  * TechniqueDetailView — 기술 상세 클라이언트 아일랜드 (F4-AC3 / F6 / Design §7d, §9.3).
  *
@@ -103,13 +105,23 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
           라이브러리
         </Link>
 
-        {/* 수정 → 편집 폼(F4-AC1). Button secondary/sm 토큰을 입은 Link. */}
-        <Link
-          href={`/techniques/${techniqueId}/edit`}
-          className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
-        >
-          수정
-        </Link>
+        {/* 즐겨찾기(별표) + 수정 — 우측 액션 그룹. 별표는 기술 로드 후에만(prefill/preview 상태엔 숨김). */}
+        <div className="flex items-center gap-1">
+          {technique && (
+            <TechniqueFavoriteStar
+              techniqueId={technique.id}
+              isFavorite={technique.is_favorite}
+              size="sm"
+            />
+          )}
+          {/* 수정 → 편집 폼(F4-AC1). Button secondary/sm 토큰을 입은 Link. */}
+          <Link
+            href={`/techniques/${techniqueId}/edit`}
+            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+          >
+            수정
+          </Link>
+        </div>
       </div>
 
       {/* 본문 — AUTH 게이팅 + 로딩/미발견/실데이터 분기. */}

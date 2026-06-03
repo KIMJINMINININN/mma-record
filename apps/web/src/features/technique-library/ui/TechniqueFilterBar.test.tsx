@@ -302,6 +302,7 @@ describe('TechniqueFilterBar', () => {
       position: 'mount',
       belt: 'blue',
       level: 'beginner',
+      favoriteOnly: true,
       sort: 'name',
     };
     render(<TechniqueFilterBar filters={filters} onChange={onChange} />);
@@ -313,8 +314,45 @@ describe('TechniqueFilterBar', () => {
     expect(next.position).toBeNull();
     expect(next.belt).toBeNull();
     expect(next.level).toBeNull();
+    expect(next.favoriteOnly).toBe(false);
     // sort is preserved
     expect(next.sort).toBe('name');
+  });
+
+  // --- 즐겨찾기만 토글 ---
+
+  it('renders 즐겨찾기 toggle (aria-pressed reflects favoriteOnly)', () => {
+    const { rerender } = render(
+      <TechniqueFilterBar filters={defaultFilters} onChange={vi.fn()} />,
+    );
+    const toggle = screen.getByRole('button', { name: '즐겨찾기만 보기' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    rerender(
+      <TechniqueFilterBar
+        filters={{ ...defaultFilters, favoriteOnly: true }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '즐겨찾기만 보기' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('clicking 즐겨찾기 toggle flips favoriteOnly', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<TechniqueFilterBar filters={defaultFilters} onChange={onChange} />);
+    await user.click(screen.getByRole('button', { name: '즐겨찾기만 보기' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ favoriteOnly: true }));
+  });
+
+  it('정렬 select offers 즐겨찾기순 option', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<TechniqueFilterBar filters={defaultFilters} onChange={onChange} />);
+    await user.selectOptions(screen.getByRole('combobox', { name: '정렬' }), 'favorites');
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ sort: 'favorites' }));
   });
 
   // --- Option content sanity checks ---

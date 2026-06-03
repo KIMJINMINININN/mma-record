@@ -33,6 +33,8 @@ export const sessionSchema = z.object({
   /** 요약 메모 (PRD F6) */
   memo_md: z.string().nullable(),
   rating: z.number().int().min(1).max(5).nullable(),
+  /** 즐겨찾기(PRD §9 P1). 별표 토글 전용 — 세션 기록(log_session RPC)은 안 보냄(DB default false). */
+  is_favorite: z.boolean(),
   visibility: z.enum(VISIBILITIES),
   created_at: isoTimestamp,
   updated_at: isoTimestamp,
@@ -94,6 +96,8 @@ export const sessionInsertSchema = sessionSchema
     user_id: true,
     created_at: true,
     updated_at: true,
+    // 즐겨찾기는 별표 토글(toggleSessionFavorite) 전용 — 세션 기록 입력에 포함하지 않는다(DB default false).
+    is_favorite: true,
   })
   .extend({
     disciplines: z.array(z.enum(DISCIPLINES)),
