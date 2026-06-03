@@ -11,6 +11,8 @@ import { TagInput } from '@/features/tag-filter';
 import { fetchTechniqueMedia, type MediaAssetRef } from '@/entities/media';
 import {
   CATEGORY_LABEL,
+  LEVEL_META,
+  LevelChip,
   POSITION_LABEL,
   categoriesForDiscipline,
   fetchTechniqueById,
@@ -24,10 +26,12 @@ import { BeltBadge, BELT_META } from '@/entities/rank';
 import {
   BELTS,
   DISCIPLINES,
+  LEVELS,
   POSITION_KINDS,
   STRIKING_STYLES,
   type Belt,
   type Discipline,
+  type Level,
   type PositionKind,
   type StrikingStyle,
   type TechniqueCategory,
@@ -107,6 +111,8 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const [belt, setBelt] = useState<Belt | ''>('');
   const [beltStripes, setBeltStripes] = useState<number>(0);
   const [strikingStyle, setStrikingStyle] = useState<StrikingStyle | ''>('');
+  // 레벨 적합도(비벨트 종목 — 레슬링·타격·MMA). 벨트 종목은 belt 사용 → level 비움.
+  const [level, setLevel] = useState<Level | ''>('');
   const [descriptionMd, setDescriptionMd] = useState('');
   const [detailsMd, setDetailsMd] = useState('');
   // 미디어 초안(F5) — 영속화 전이라 저장으로 흘리지 않고 로컬 수집만(아래 handleSave seam 참고).
@@ -163,6 +169,7 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     setBelt(existing.belt ?? '');
     setBeltStripes(existing.belt_stripes ?? 0);
     setStrikingStyle(existing.striking_style ?? '');
+    setLevel(existing.level ?? '');
     setDescriptionMd(existing.description_md ?? '');
     setDetailsMd(existing.details_md ?? '');
     // 미디어 드래프트는 별도 테이블(media_links) — prefill은 후속 TODO(#6-3).
@@ -194,6 +201,8 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
 
   const showBelt = discipline !== '' && usesBelt(discipline);
   const showStriking = discipline === 'striking';
+  // 레벨은 비벨트 종목(레슬링·타격·MMA)만 — belt 와 상호배타(PRD §3).
+  const showLevel = discipline !== '' && !usesBelt(discipline);
 
   // 이름·종목·분류가 필수(***) — 셋이 채워지고 제출 중이 아닐 때만 저장 가능.
   // 편집 모드에선 태그·미디어 prefill이 로드되기 전 저장을 막는다 — 빈 집합 재동기화로
@@ -224,6 +233,10 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     if (next !== 'striking') {
       setStrikingStyle('');
     }
+    // 레벨은 비벨트 종목만 — 벨트 종목(주짓수)으로 바뀌면 비운다(belt 와 상호배타).
+    if (usesBelt(next)) {
+      setLevel('');
+    }
   }
 
   function handleSave() {
@@ -245,6 +258,7 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
       striking_style: showStriking && strikingStyle !== '' ? strikingStyle : null,
       belt: showBelt && belt !== '' ? belt : null,
       belt_stripes: showBelt && belt !== '' ? beltStripes : null,
+      level: showLevel && level !== '' ? level : null,
       description_md: descriptionMd.trim() || null,
       details_md: detailsMd.trim() || null,
       visibility: 'private' as const,
@@ -408,6 +422,33 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
             // 벨트 미리보기 배지(live).
             <div className="pt-1">
               <BeltBadge belt={belt} stripes={beltStripes} size="md" />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── 레벨 적합도 (비벨트 종목만, 선택 — belt 와 상호배타) ── */}
+      {showLevel && (
+        <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
+          <Field label="레벨 적합도 (선택)" htmlFor="tf-level">
+            <select
+              id="tf-level"
+              value={level}
+              onChange={(e) => setLevel(e.target.value as Level | '')}
+              className={`h-10 ${FIELD_BASE}`}
+            >
+              <option value="">선택 안 함</option>
+              {LEVELS.map((lv) => (
+                <option key={lv} value={lv}>
+                  {LEVEL_META[lv].label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {level !== '' && (
+            // 레벨 미리보기 배지(live).
+            <div className="pt-1">
+              <LevelChip level={level} size="sm" />
             </div>
           )}
         </section>

@@ -8,6 +8,7 @@ import {
   fetchTechniqueById,
   fetchTechniqueSessions,
   CategoryChip,
+  LevelChip,
   PositionChip,
 } from '@/entities/technique';
 import { DisciplineChip, usesBelt } from '@/entities/discipline';
@@ -126,11 +127,14 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
           {/* 제목 */}
           <h1 className="text-heading-l text-[var(--text-strong)]">{technique.name}</h1>
 
-          {/* 종목 + 벨트(주짓수만) + 분류 · 포지션 (Design §7d) */}
+          {/* 종목 + 벨트(주짓수) OR 레벨(비벨트) + 분류 · 포지션 (Design §7d, belt↔level 상호배타) */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <DisciplineChip discipline={technique.discipline} />
             {usesBelt(technique.discipline) && technique.belt && (
               <BeltBadge belt={technique.belt} stripes={technique.belt_stripes ?? 0} />
+            )}
+            {!usesBelt(technique.discipline) && technique.level && (
+              <LevelChip level={technique.level} size="sm" />
             )}
             <CategoryChip category={technique.category} size="sm" />
             {technique.position && <PositionChip position={technique.position} size="sm" />}

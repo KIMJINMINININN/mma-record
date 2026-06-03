@@ -7,9 +7,11 @@ afterEach(cleanup);
 import {
   DISCIPLINES,
   BELTS,
+  LEVELS,
 } from '@/shared/model/enums';
 import { DISCIPLINE_META } from '@/entities/discipline';
 import { BELT_META } from '@/entities/rank';
+import { LEVEL_META } from '@/entities/technique';
 import {
   DEFAULT_TECHNIQUE_FILTERS,
   type TechniqueFilters,
@@ -21,10 +23,10 @@ const defaultFilters: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS };
 describe('TechniqueFilterBar', () => {
   // --- Rendering ---
 
-  it('renders 5 selects (종목/분류/포지션/벨트/정렬)', () => {
+  it('renders 6 selects (종목/분류/포지션/벨트/레벨/정렬)', () => {
     render(<TechniqueFilterBar filters={defaultFilters} onChange={vi.fn()} />);
     // comboboxes = <select> elements in RTL
-    expect(screen.getAllByRole('combobox')).toHaveLength(5);
+    expect(screen.getAllByRole('combobox')).toHaveLength(6);
   });
 
   it('renders 종목 select with aria-label "종목 필터"', () => {
@@ -45,6 +47,11 @@ describe('TechniqueFilterBar', () => {
   it('renders 벨트 select with aria-label "벨트 필터"', () => {
     render(<TechniqueFilterBar filters={defaultFilters} onChange={vi.fn()} />);
     expect(screen.getByRole('combobox', { name: '벨트 필터' })).toBeInTheDocument();
+  });
+
+  it('renders 레벨 select with aria-label "레벨 필터"', () => {
+    render(<TechniqueFilterBar filters={defaultFilters} onChange={vi.fn()} />);
+    expect(screen.getByRole('combobox', { name: '레벨 필터' })).toBeInTheDocument();
   });
 
   it('renders 정렬 select with aria-label "정렬"', () => {
@@ -215,6 +222,33 @@ describe('TechniqueFilterBar', () => {
     );
   });
 
+  // --- 레벨 select onChange ---
+
+  it('selecting a level calls onChange with that level set', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<TechniqueFilterBar filters={defaultFilters} onChange={onChange} />);
+    await user.selectOptions(screen.getByRole('combobox', { name: '레벨 필터' }), 'intermediate');
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'intermediate' }),
+    );
+  });
+
+  it('selecting "" in 레벨 calls onChange with level: null', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <TechniqueFilterBar
+        filters={{ ...defaultFilters, level: 'advanced' }}
+        onChange={onChange}
+      />,
+    );
+    await user.selectOptions(screen.getByRole('combobox', { name: '레벨 필터' }), '');
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ level: null }),
+    );
+  });
+
   // --- 정렬 select onChange ---
 
   it('changing sort to "name" calls onChange with sort: "name"', async () => {
@@ -267,6 +301,7 @@ describe('TechniqueFilterBar', () => {
       category: 'guard',
       position: 'mount',
       belt: 'blue',
+      level: 'beginner',
       sort: 'name',
     };
     render(<TechniqueFilterBar filters={filters} onChange={onChange} />);
@@ -277,6 +312,7 @@ describe('TechniqueFilterBar', () => {
     expect(next.category).toBeNull();
     expect(next.position).toBeNull();
     expect(next.belt).toBeNull();
+    expect(next.level).toBeNull();
     // sort is preserved
     expect(next.sort).toBe('name');
   });
@@ -299,6 +335,16 @@ describe('TechniqueFilterBar', () => {
     BELTS.forEach((b) => {
       expect(select).toContainElement(
         screen.getByRole('option', { name: BELT_META[b].label }),
+      );
+    });
+  });
+
+  it('레벨 select contains all level labels as options', () => {
+    render(<TechniqueFilterBar filters={defaultFilters} onChange={vi.fn()} />);
+    const select = screen.getByRole('combobox', { name: '레벨 필터' });
+    LEVELS.forEach((lv) => {
+      expect(select).toContainElement(
+        screen.getByRole('option', { name: LEVEL_META[lv].label }),
       );
     });
   });

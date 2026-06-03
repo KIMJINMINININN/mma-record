@@ -44,3 +44,10 @@ export type StrikingStyle = (typeof STRIKING_STYLES)[number];
 
 export const RANK_TRACKS = ['bjj', 'wrestling', 'striking', 'mma'] as const;
 export type RankTrack = (typeof RANK_TRACKS)[number];
+
+/**
+ * 기술 레벨 적합도(비벨트 종목 — 레슬링·타격·MMA, PRD §3).
+ * SQL `0017_technique_level.sql` 의 `skill_level` enum 과 1:1 (ascii 키, UI가 한글 라벨로 매핑).
+ */
+export const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
+export type Level = (typeof LEVELS)[number];

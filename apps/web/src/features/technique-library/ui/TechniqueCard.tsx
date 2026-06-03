@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { DisciplineChip, usesBelt } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
-import { CategoryChip, PositionChip, type Technique } from '@/entities/technique';
+import { CategoryChip, LevelChip, PositionChip, type Technique } from '@/entities/technique';
 import { TechniqueIcon } from '@/shared/ui';
 
 /**
@@ -26,7 +26,10 @@ export interface TechniqueCardProps {
 }
 
 export function TechniqueCard({ technique, thumbnailUrl = null }: TechniqueCardProps) {
+  // belt↔level 은 **종목**으로 가른다(DetailView/Form 과 동일 술어). belt 유무로 가르면
+  // belt=null 인 주짓수 행에 stray level 이 있을 때 카드만 LevelChip 을 띄워 표면 간 불일치가 난다.
   const showBelt = usesBelt(technique.discipline) && technique.belt !== null;
+  const showLevel = !usesBelt(technique.discipline) && technique.level !== null;
 
   return (
     <Link
@@ -53,7 +56,7 @@ export function TechniqueCard({ technique, thumbnailUrl = null }: TechniqueCardP
       {/* 이름 — 최대 2줄 truncate */}
       <p className="line-clamp-2 text-body-m-500 text-[var(--text-strong)]">{technique.name}</p>
 
-      {/* 배지 행 1 — 종목 + (주짓수)벨트 */}
+      {/* 배지 행 1 — 종목 + (주짓수)벨트 OR (비벨트)레벨 (belt↔level 상호배타) */}
       <div className="flex flex-wrap items-center gap-1">
         <DisciplineChip discipline={technique.discipline} size="xs" />
         {showBelt && technique.belt && (
@@ -63,6 +66,7 @@ export function TechniqueCard({ technique, thumbnailUrl = null }: TechniqueCardP
             size="xs"
           />
         )}
+        {showLevel && technique.level && <LevelChip level={technique.level} size="xs" />}
       </div>
 
       {/* 배지 행 2 — 분류 + 포지션 */}

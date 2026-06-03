@@ -2,14 +2,16 @@
 
 import { DISCIPLINE_META } from '@/entities/discipline';
 import { BELT_META } from '@/entities/rank';
-import { CATEGORY_LABEL, POSITION_LABEL } from '@/entities/technique';
+import { CATEGORY_LABEL, LEVEL_META, POSITION_LABEL } from '@/entities/technique';
 import {
   BELTS,
   DISCIPLINES,
+  LEVELS,
   POSITION_KINDS,
   TECHNIQUE_CATEGORIES,
   type Belt,
   type Discipline,
+  type Level,
   type PositionKind,
   type TechniqueCategory,
 } from '@/shared/model/enums';
@@ -115,6 +117,23 @@ export function TechniqueFilterBar({ filters, onChange }: TechniqueFilterBarProp
         {BELTS.map((b) => (
           <option key={b} value={b}>
             {BELT_META[b].label}
+          </option>
+        ))}
+      </select>
+
+      {/* 레벨 (비벨트 종목 적합도 — 벨트와 상호배타 축) */}
+      <select
+        aria-label="레벨 필터"
+        value={filters.level ?? ''}
+        onChange={(e) =>
+          onChange({ ...filters, level: (e.target.value || null) as Level | null })
+        }
+        className={SELECT_BASE}
+      >
+        <option value="">레벨 전체</option>
+        {LEVELS.map((lv) => (
+          <option key={lv} value={lv}>
+            {LEVEL_META[lv].label}
           </option>
         ))}
       </select>

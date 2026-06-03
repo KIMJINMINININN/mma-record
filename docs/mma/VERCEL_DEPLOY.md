@@ -94,13 +94,15 @@ pnpm web build               # next build  ← 이게 통과하면 Vercel 빌드
 - 재생은 **소유자 SELECT RLS + 경로 `<uid>/videos/…` 일치** 조건의 `createSignedUrl`로 동작(§8-C).
 
 ### 4c. 마이그레이션/시드 확인
-- 원격에 0001~0016 적용 + **프리셋(기술) 시드 라이브**여야 한다(아래 §6 검증의 "프리셋" 항목).
+- 원격에 0001~0017 적용 + **프리셋(기술) 시드 라이브**여야 한다(아래 §6 검증의 "프리셋" 항목).
+- **0017(technique level)은 컬럼 추가** — 코드보다 **먼저** 적용해야 한다(아래 §5-0 선적용 단계).
 
 ---
 
 ## 5. 배포 실행 & 재배포 규칙
 
-1. §2~§4 완료 후 **Deploy**. (또는 `main`에 푸시하면 프로덕션 배포 트리거.)
+0. **(컬럼 추가 마이그레이션 선적용)** 새 컬럼을 더하는 마이그레이션(예: 0017 technique level)은 **코드 배포 전에** 원격 DB에 적용한다: `pnpm web db:push`(0017 적용) → 대시보드에서 `techniques.level` 컬럼 확인 → `pnpm web db:types`(타입 재생성, 정상이면 no-op diff). 코드를 먼저 배포하면 기술 생성/편집(insert/update)이 적용 전까지 PGRST204("Could not find the 'level' column")로 실패한다(읽기는 안전). CI가 마이그레이션을 적용하지 않으므로(빌드 명령은 `next build`뿐) 이 단계는 수동이다.
+1. §2~§4 완료 후 **Deploy**. (또는 `main`에 푸시하면 프로덕션 배포 트리거 — 0번 선적용을 반드시 먼저.)
 2. **`NEXT_PUBLIC_*` 변경 시 → Deployments → 최신 → Redeploy** (빌드 인라인이라 재빌드 필수).
 3. 서버 전용 변수(`SUPABASE_SECRET_KEY`, `YOUTUBE_API_KEY`)는 런타임 주입이라 즉시 반영(런타임 재시작), 단 빌드 캐시 영향 없으면 보통 Redeploy 불필요.
 
@@ -162,7 +164,7 @@ pnpm web build               # next build  ← 이게 통과하면 Vercel 빌드
 [ ] Vercel: Root=apps/web · Node 20+ · Production Branch=main
 [ ] Vercel env(빌드 전): NEXT_PUBLIC_SUPABASE_URL · _PUBLISHABLE_KEY · SUPABASE_SECRET_KEY(🔒) · NEXT_PUBLIC_AUTH_ENABLED=true
 [ ] Supabase: Site URL + Redirect URLs = Vercel 도메인
-[ ] Supabase: private 버킷(training-media) + 0001~0016 + 프리셋 시드
+[ ] Supabase: private 버킷(training-media) + 0001~0017 + 프리셋 시드 (0017=컬럼 추가 → 코드보다 먼저)
 [ ] Deploy → §6 검증 체크리스트 통과
 [ ] 모바일 CLIENT_URL = 실 Vercel 도메인
 ```

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   BELTS,
   DISCIPLINES,
+  LEVELS,
   POSITION_KINDS,
   STRIKING_STYLES,
   TECHNIQUE_CATEGORIES,
@@ -28,6 +29,8 @@ export const techniqueSchema = z.object({
   belt: z.enum(BELTS).nullable(),
   /** 벨트 그랄 0~4 */
   belt_stripes: z.number().int().min(0).max(4).nullable(),
+  /** "레벨 적합도"(비벨트 종목 — 레슬링·타격·MMA, PRD §3). 주짓수(벨트 종목)는 null */
+  level: z.enum(LEVELS).nullable(),
   /** 마크다운 설명 */
   description_md: z.string().nullable(),
   /** 주의점/디테일 (PRD F6 — UI 강조박스) */

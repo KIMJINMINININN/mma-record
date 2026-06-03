@@ -1,5 +1,5 @@
 import type { Technique } from '@/entities/technique';
-import type { Discipline, TechniqueCategory, PositionKind, Belt } from '@/shared/model/enums';
+import type { Discipline, TechniqueCategory, PositionKind, Belt, Level } from '@/shared/model/enums';
 
 /**
  * 기술 라이브러리 필터/정렬 모델 (F4-AC4 / Design §7d).
@@ -16,6 +16,8 @@ export interface TechniqueFilters {
   category: TechniqueCategory | null;
   position: PositionKind | null;
   belt: Belt | null;
+  /** 레벨 적합도(비벨트 종목 — 레슬링·타격·MMA). belt 와 상호배타. */
+  level: Level | null;
   sort: TechniqueSort;
 }
 
@@ -24,17 +26,24 @@ export const DEFAULT_TECHNIQUE_FILTERS: TechniqueFilters = {
   category: null,
   position: null,
   belt: null,
+  level: null,
   sort: 'recent',
 };
 
-/** 정렬을 제외한 필터(종목/분류/포지션/벨트) 중 하나라도 활성인가. */
+/** 정렬을 제외한 필터(종목/분류/포지션/벨트/레벨) 중 하나라도 활성인가. */
 export function isAnyFilterActive(f: TechniqueFilters): boolean {
-  return f.discipline !== null || f.category !== null || f.position !== null || f.belt !== null;
+  return (
+    f.discipline !== null ||
+    f.category !== null ||
+    f.position !== null ||
+    f.belt !== null ||
+    f.level !== null
+  );
 }
 
-/** 정렬은 유지하고 필터(종목/분류/포지션/벨트)만 해제한다. */
+/** 정렬은 유지하고 필터(종목/분류/포지션/벨트/레벨)만 해제한다. */
 export function clearFilters(f: TechniqueFilters): TechniqueFilters {
-  return { ...f, discipline: null, category: null, position: null, belt: null };
+  return { ...f, discipline: null, category: null, position: null, belt: null, level: null };
 }
 
 /** 필터 적용 + 정렬 (순수 함수 — 인프라 때 실데이터에도 그대로 동작). */
@@ -44,7 +53,8 @@ export function filterAndSortTechniques(list: Technique[], f: TechniqueFilters):
       (f.discipline === null || t.discipline === f.discipline) &&
       (f.category === null || t.category === f.category) &&
       (f.position === null || t.position === f.position) &&
-      (f.belt === null || t.belt === f.belt),
+      (f.belt === null || t.belt === f.belt) &&
+      (f.level === null || t.level === f.level),
   );
   const sorted = [...filtered].sort((a, b) =>
     f.sort === 'name'

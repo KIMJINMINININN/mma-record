@@ -22,6 +22,7 @@ const BASE: Technique = {
   striking_style: null,
   belt: 'blue',
   belt_stripes: 0,
+  level: null,
   description_md: null,
   details_md: null,
   visibility: 'private',
@@ -50,6 +51,7 @@ const TAKEDOWN: Technique = makeTechnique({
   category: 'takedown',
   position: 'standing',
   belt: null,
+  level: 'intermediate',
   created_at: '2024-02-01T00:00:00.000Z',
 });
 
@@ -61,6 +63,7 @@ const PUNCH: Technique = makeTechnique({
   position: null,
   striking_style: 'boxing',
   belt: null,
+  level: 'beginner',
   created_at: '2024-04-01T00:00:00.000Z',
 });
 
@@ -77,6 +80,7 @@ describe('DEFAULT_TECHNIQUE_FILTERS', () => {
       category: null,
       position: null,
       belt: null,
+      level: null,
       sort: 'recent',
     });
   });
@@ -107,6 +111,10 @@ describe('isAnyFilterActive', () => {
     expect(isAnyFilterActive({ ...DEFAULT_TECHNIQUE_FILTERS, belt: 'blue' })).toBe(true);
   });
 
+  it('returns true when level is set', () => {
+    expect(isAnyFilterActive({ ...DEFAULT_TECHNIQUE_FILTERS, level: 'beginner' })).toBe(true);
+  });
+
   it('returns false when only sort differs (sort is not a filter)', () => {
     const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, sort: 'name' };
     expect(isAnyFilterActive(f)).toBe(false);
@@ -118,12 +126,13 @@ describe('isAnyFilterActive', () => {
 // ---------------------------------------------------------------------------
 
 describe('clearFilters', () => {
-  it('nulls all four filter fields', () => {
+  it('nulls all five filter fields', () => {
     const active: TechniqueFilters = {
       discipline: 'bjj_gi',
       category: 'submission',
       position: 'mount',
       belt: 'blue',
+      level: 'beginner',
       sort: 'recent',
     };
     const result = clearFilters(active);
@@ -131,6 +140,7 @@ describe('clearFilters', () => {
     expect(result.category).toBeNull();
     expect(result.position).toBeNull();
     expect(result.belt).toBeNull();
+    expect(result.level).toBeNull();
   });
 
   it('preserves the sort field', () => {
@@ -147,6 +157,7 @@ describe('clearFilters', () => {
       category: 'takedown',
       position: 'standing',
       belt: 'white',
+      level: 'intermediate',
       sort: 'name',
     };
     const snapshot = { ...original };
@@ -216,6 +227,22 @@ describe('filterAndSortTechniques', () => {
       const result = filterAndSortTechniques(LIST, f);
       expect(result.some((t) => t.position === null)).toBe(false);
     });
+
+    it('filters by level (non-belt disciplines)', () => {
+      const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, level: 'intermediate' };
+      const result = filterAndSortTechniques(LIST, f);
+      // only TAKEDOWN (wrestling) is 'intermediate'
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(TAKEDOWN.id);
+    });
+
+    it('items with null level (belt disciplines) are excluded when level filter is active', () => {
+      const f: TechniqueFilters = { ...DEFAULT_TECHNIQUE_FILTERS, level: 'beginner' };
+      const result = filterAndSortTechniques(LIST, f);
+      // only PUNCH (striking) is 'beginner'; bjj items (null level) excluded
+      expect(result.every((t) => t.level === 'beginner')).toBe(true);
+      expect(result.map((t) => t.id)).toEqual([PUNCH.id]);
+    });
   });
 
   describe('multiple filters AND-combined', () => {
@@ -251,12 +278,13 @@ describe('filterAndSortTechniques', () => {
       expect(result[0].id).toBe(BASE.id);
     });
 
-    it('all four filters narrow correctly', () => {
+    it('all five filters narrow correctly', () => {
       const f: TechniqueFilters = {
         discipline: 'bjj_gi',
         category: 'submission',
         position: 'mount',
         belt: 'blue',
+        level: null, // bjj_gi uses belt, not level → null means "include all"
         sort: 'recent',
       };
       const result = filterAndSortTechniques(LIST, f);

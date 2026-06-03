@@ -350,6 +350,7 @@ export type Database = {
           details_md: string | null
           discipline: Database["public"]["Enums"]["discipline"]
           id: string
+          level: Database["public"]["Enums"]["skill_level"] | null
           name: string
           position: Database["public"]["Enums"]["position_kind"] | null
           striking_style: Database["public"]["Enums"]["striking_style"] | null
@@ -366,6 +367,7 @@ export type Database = {
           details_md?: string | null
           discipline: Database["public"]["Enums"]["discipline"]
           id?: string
+          level?: Database["public"]["Enums"]["skill_level"] | null
           name: string
           position?: Database["public"]["Enums"]["position_kind"] | null
           striking_style?: Database["public"]["Enums"]["striking_style"] | null
@@ -382,6 +384,7 @@ export type Database = {
           details_md?: string | null
           discipline?: Database["public"]["Enums"]["discipline"]
           id?: string
+          level?: Database["public"]["Enums"]["skill_level"] | null
           name?: string
           position?: Database["public"]["Enums"]["position_kind"] | null
           striking_style?: Database["public"]["Enums"]["striking_style"] | null
@@ -519,6 +522,7 @@ export type Database = {
         | "knee_on_belly"
         | "other"
       rank_track: "bjj" | "wrestling" | "striking" | "mma"
+      skill_level: "beginner" | "intermediate" | "advanced"
       striking_style: "muay_thai" | "kickboxing" | "boxing" | "other"
       technique_category:
         | "guard"
@@ -699,6 +703,7 @@ export const Constants = {
         "other",
       ],
       rank_track: ["bjj", "wrestling", "striking", "mma"],
+      skill_level: ["beginner", "intermediate", "advanced"],
       striking_style: ["muay_thai", "kickboxing", "boxing", "other"],
       technique_category: [
         "guard",
