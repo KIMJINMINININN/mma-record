@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { TagInput, tagKey } from '@/features/tag-filter';
+import { TagManager } from '@/features/manage-tags';
 import { TechniqueCard } from '@/features/technique-library';
 import { SessionCard } from '@/widgets/day-detail';
 import { fetchTagNames, fetchTaggedItems } from '@/entities/tag';
@@ -48,9 +49,18 @@ export function TagsView() {
   const isEmpty = techniques.length === 0 && sessions.length === 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* 선택 AND 바 — 필터 모드(생성 비허용). §7f: 선택 칩 + (AND) 어포던스. */}
-      <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-8">
+      {/* 태그 관리(F7-AC4): 색·이름 변경, 사용 빈도순 정렬, 삭제. */}
+      <section>
+        <h2 className="mb-3 text-heading-xs text-[var(--text-strong)]">태그 관리</h2>
+        <TagManager />
+      </section>
+
+      {/* 태그로 모아보기(AND 필터) — 기존 동작 그대로. */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-heading-xs text-[var(--text-strong)]">태그로 모아보기</h2>
+        {/* 선택 AND 바 — 필터 모드(생성 비허용). §7f: 선택 칩 + (AND) 어포던스. */}
+        <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <TagInput
@@ -96,9 +106,9 @@ export function TagsView() {
         <div className="flex flex-col gap-6">
           {techniques.length > 0 && (
             <section className="flex flex-col gap-3">
-              <h2 className="text-heading-xs text-[var(--text-strong)]">
+              <h3 className="text-heading-xs text-[var(--text-strong)]">
                 기술 <span className="text-[var(--text-muted)]">{techniques.length}</span>
-              </h2>
+              </h3>
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                 {techniques.map((t) => (
                   <TechniqueCard key={t.id} technique={t} />
@@ -108,9 +118,9 @@ export function TagsView() {
           )}
           {sessions.length > 0 && (
             <section className="flex flex-col gap-3">
-              <h2 className="text-heading-xs text-[var(--text-strong)]">
+              <h3 className="text-heading-xs text-[var(--text-strong)]">
                 세션 <span className="text-[var(--text-muted)]">{sessions.length}</span>
-              </h2>
+              </h3>
               <div className="flex flex-col gap-3">
                 {sessions.map((s) => (
                   <SessionCard key={s.id} session={s} />
@@ -119,7 +129,8 @@ export function TagsView() {
             </section>
           )}
         </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }

@@ -227,6 +227,46 @@ describe('TagChip', () => {
     });
   });
 
+  // ── COLOR SWATCH (F7-AC4) ─────────────────────────────────────────────────
+
+  describe('color swatch', () => {
+    it('valid color key renders a leading swatch dot AND keeps # + label', () => {
+      const { container } = render(<TagChip label="guard" color="teal" />);
+      const hidden = container.querySelectorAll('[aria-hidden="true"]');
+      // swatch + '#'
+      expect(hidden).toHaveLength(2);
+      expect((hidden[0] as HTMLElement).style.backgroundColor).toContain('light-dark');
+      expect(hidden[1].textContent).toBe('#');
+      expect(container.querySelector('.truncate')!.textContent).toBe('guard');
+    });
+
+    it('aria-label includes the color label (청록 for teal)', () => {
+      const { container } = render(<TagChip label="guard" color="teal" />);
+      expect(container.firstElementChild).toHaveAttribute(
+        'aria-label',
+        expect.stringContaining('색상 청록'),
+      );
+    });
+
+    it('selected suppresses the swatch (no extra dot, no color in aria-label)', () => {
+      const { container } = render(<TagChip label="guard" color="teal" selected />);
+      // only '#' is aria-hidden
+      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
+      const ariaLabel = container.firstElementChild!.getAttribute('aria-label') ?? '';
+      expect(ariaLabel).not.toContain('색상');
+    });
+
+    it('unknown color value renders no swatch (legacy hex tolerated → null)', () => {
+      const { container } = render(<TagChip label="guard" color="#ff5733" />);
+      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1); // only '#'
+    });
+
+    it('no color prop → no swatch (unchanged)', () => {
+      const { container } = render(<TagChip label="guard" />);
+      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
+    });
+  });
+
   // ── SIZE VARIANTS ─────────────────────────────────────────────────────────
 
   describe('size variants', () => {

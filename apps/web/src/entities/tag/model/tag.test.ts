@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { taggableSchema, tagSchema, tagInsertSchema } from '@/entities/tag/model/tag';
+import { taggableSchema, tagSchema, tagInsertSchema, tagUpdateSchema } from '@/entities/tag/model/tag';
 
 // Zod v4 enforces strict RFC-4122: version nibble [1-8], variant nibble [89abAB].
 const UUID_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
@@ -91,6 +91,11 @@ describe('tagSchema', () => {
     expect(tagSchema.safeParse({ ...valid, color: null }).success).toBe(true);
   });
 
+  // 회귀: color 컬럼은 자유 text 유지(레거시 hex 보존) — 팔레트 제약은 tagUpdateSchema(쓰기)에만.
+  it('still accepts legacy hex color (#ff5733)', () => {
+    expect(tagSchema.safeParse({ ...valid, color: '#ff5733' }).success).toBe(true);
+  });
+
   it('rejects non-UUID id', () => {
     expect(tagSchema.safeParse({ ...valid, id: 'not-a-uuid' }).success).toBe(false);
   });
@@ -124,4 +129,21 @@ describe('tagInsertSchema (omits id / user_id / created_at)', () => {
       expect((result.data as Record<string, unknown>).created_at).toBeUndefined();
     }
   });
+});
+
+describe('tagUpdateSchema (F7-AC4 rename + recolor, 부분 수정)', () => {
+  it('이름만', () => expect(tagUpdateSchema.safeParse({ name: 'guard' }).success).toBe(true));
+  it('색만(팔레트 키)', () => expect(tagUpdateSchema.safeParse({ color: 'teal' }).success).toBe(true));
+  it('색 없음(null)', () => expect(tagUpdateSchema.safeParse({ color: null }).success).toBe(true));
+  it('이름+색', () => expect(tagUpdateSchema.safeParse({ name: 'x', color: null }).success).toBe(true));
+
+  it('빈 객체 거부(변경 없음)', () => expect(tagUpdateSchema.safeParse({}).success).toBe(false));
+  it('빈 이름 거부', () => expect(tagUpdateSchema.safeParse({ name: '' }).success).toBe(false));
+  it('공백 이름 거부(trim)', () => expect(tagUpdateSchema.safeParse({ name: '   ' }).success).toBe(false));
+  it('너무 긴 이름 거부(>40)', () =>
+    expect(tagUpdateSchema.safeParse({ name: 'a'.repeat(41) }).success).toBe(false));
+  it('비팔레트 색 거부(자유 hex 금지)', () =>
+    expect(tagUpdateSchema.safeParse({ color: '#ff5733' }).success).toBe(false));
+  it('미지 색 키 거부', () =>
+    expect(tagUpdateSchema.safeParse({ color: 'notacolor' }).success).toBe(false));
 });

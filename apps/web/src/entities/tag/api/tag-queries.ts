@@ -4,6 +4,10 @@ import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
 // 타입만 가져온다(technique-queries 가 SessionWithDisciplines 를 가져오는 것과 동일한 의도된 예외).
 import type { Technique } from '@/entities/technique';
 import type { SessionWithDisciplines } from '@/entities/session';
+import type { Tag } from '../model/tag';
+
+/** PostgREST 행 캡(max_rows) 회피용 페이지 크기 — 전 기간 집계(빈도/AND)가 조용히 잘리지 않도록 .range() 루프. */
+const PAGE = 1000;
 
 /**
  * 태그 entity 데이터 접근 (client) — PRD F7 / Develop §9 (tags/taggables).
@@ -26,6 +30,44 @@ export async function fetchTagNames(): Promise<string[]> {
     .order('name', { ascending: true });
   if (error) throw error;
   return (data ?? []).map((t) => t.name);
+}
+
+/** 사용자 태그 전체 행(id/name/color/...) — 태그 관리 UI용 (F7-AC4). RLS로 본인 것만, 이름 오름차순. */
+export async function fetchTags(): Promise<Tag[]> {
+  const supabase = createSupabaseBrowserClient();
+  const out: Tag[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('tags')
+      .select('id, user_id, name, color, created_at')
+      .order('name', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as Tag[];
+    out.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return out;
+}
+
+/**
+ * 태그별 사용 빈도(taggables 행 수) — 빈도순 정렬용 (F7-AC4). DB 집계 없이 client에서 카운트.
+ * RLS(taggables_owns)로 본인 소유 링크만 집계된다. .range() 루프로 행 캡에 잘리지 않게 전수 집계. 반환: Map<tag_id, count>.
+ */
+export async function fetchTagUsageCounts(): Promise<Map<string, number>> {
+  const supabase = createSupabaseBrowserClient();
+  const counts = new Map<string, number>();
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('taggables')
+      .select('tag_id')
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    for (const row of page) counts.set(row.tag_id, (counts.get(row.tag_id) ?? 0) + 1);
+    if (page.length < PAGE) break;
+  }
+  return counts;
 }
 
 /**
@@ -86,12 +128,19 @@ export async function fetchTaggedItems(tagNames: string[]): Promise<TaggedItems>
   const ids = (tagRows ?? []).map((t) => t.id);
   if (ids.length < names.length) return empty; // 미존재 태그 포함 → AND 불가능
 
-  // 2) taggables 수집
-  const { data: links, error: linkErr } = await supabase
-    .from('taggables')
-    .select('tag_id, session_id, technique_id')
-    .in('tag_id', ids);
-  if (linkErr) throw linkErr;
+  // 2) taggables 수집 — .range() 루프로 행 캡에 잘리지 않게(잘리면 AND 멤버십이 거짓 누락될 수 있음).
+  const links: { tag_id: string; session_id: string | null; technique_id: string | null }[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error: linkErr } = await supabase
+      .from('taggables')
+      .select('tag_id, session_id, technique_id')
+      .in('tag_id', ids)
+      .range(from, from + PAGE - 1);
+    if (linkErr) throw linkErr;
+    const page = data ?? [];
+    links.push(...page);
+    if (page.length < PAGE) break;
+  }
 
   // 3) 전부(AND) 가진 항목만
   const required = ids.length;

@@ -2,6 +2,8 @@
 
 import { cva, type VariantProps } from 'class-variance-authority';
 
+import { resolveTagColor, tagColorCss } from '../lib/tag-meta';
+
 /**
  * TagChip — 자유 태그 칩 (Design.md §6.3).
  * 이름 앞에 '#' 표시. radius rounded-xxs. 상호작용(클릭/제거)이 있어 클라이언트 컴포넌트.
@@ -58,6 +60,8 @@ type ChipVariants = VariantProps<typeof chip>;
 export interface TagChipProps {
   /** 태그 이름 ('#' 접두사는 컴포넌트가 자동 표시) */
   label: string;
+  /** 팔레트 키(tag-meta) 또는 null. 유효 키면 앞에 색 스와치 점 표시(색 단독 인코딩 아님 — '#name' 병기). */
+  color?: string | null;
   size?: NonNullable<ChipVariants['size']>;
   /** 필터 선택 상태 */
   selected?: boolean;
@@ -102,6 +106,7 @@ const removeButtonClass = [
 
 export function TagChip({
   label,
+  color = null,
   size = 'sm',
   selected = false,
   removable = false,
@@ -111,6 +116,22 @@ export function TagChip({
   className,
 }: TagChipProps) {
   const clickable = !!onClick && !disabled;
+
+  // 색 스와치 점 — 유효 팔레트 키 + 비선택일 때만(selected 틴트/포커스 ring과 충돌 회피).
+  // 색은 단독 식별 아님(F9): '#name' 텍스트 + aria-label의 색상 라벨이 식별을 보장하고 점은 aria-hidden.
+  const colorMeta = resolveTagColor(color);
+  const showColor = colorMeta !== null && !selected;
+  const swatch = showColor ? (
+    <span
+      aria-hidden="true"
+      className="inline-block size-1.5 shrink-0 rounded-full"
+      style={{ backgroundColor: tagColorCss(colorMeta) }}
+    />
+  ) : null;
+
+  const ariaLabel = `태그 ${label}${showColor ? `, 색상 ${colorMeta.label}` : ''}${
+    selected ? ', 선택됨' : ''
+  }`;
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -130,7 +151,7 @@ export function TagChip({
     return (
       <span
         className={containerClassName}
-        aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+        aria-label={ariaLabel}
       >
         {/* 토글 button — 라벨/해시 텍스트만 포함 */}
         <button
@@ -138,9 +159,10 @@ export function TagChip({
           onClick={onClick}
           disabled={disabled}
           aria-pressed={selected}
-          aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+          aria-label={ariaLabel}
           className="inline-flex items-center gap-[inherit] focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]"
         >
+          {swatch}
           <span aria-hidden="true" className="text-[var(--text-muted)]">
             #
           </span>
@@ -168,9 +190,10 @@ export function TagChip({
         onClick={onClick}
         disabled={disabled}
         aria-pressed={selected}
-        aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+        aria-label={ariaLabel}
         className={containerClassName}
       >
+        {swatch}
         <span aria-hidden="true" className="text-[var(--text-muted)]">
           #
         </span>
@@ -183,8 +206,9 @@ export function TagChip({
   return (
     <span
       className={containerClassName}
-      aria-label={`태그 ${label}${selected ? ', 선택됨' : ''}`}
+      aria-label={ariaLabel}
     >
+      {swatch}
       <span aria-hidden="true" className="text-[var(--text-muted)]">
         #
       </span>
