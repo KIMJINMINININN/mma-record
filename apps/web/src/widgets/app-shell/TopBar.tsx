@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { TodayIcon } from '@/shared/ui';
 import { SearchBar } from './SearchBar';
@@ -14,7 +15,10 @@ import { ThemeToggle } from './ThemeToggle';
 export function TopBar() {
   return (
     <header className="flex items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--surface-base)] px-3 py-2 md:px-5">
-      <SearchBar />
+      {/* SearchBar는 useSearchParams를 쓰므로 Suspense로 감싸 AUTH-OFF 정적 프리렌더(CSR bailout)를 격리한다. */}
+      <Suspense fallback={<div className="flex min-w-0 flex-1" />}>
+        <SearchBar />
+      </Suspense>
 
       {/* "오늘로" — F2 캘린더 오늘로 점프. 지금은 캘린더 진입만. */}
       {/* TODO(F2): 캘린더가 ?date 쿼리를 읽도록 되면 `/calendar?date=<today-KST>`로 교체. */}

@@ -5,9 +5,22 @@
  */
 export { searchAll } from './api/search-all';
 export { SearchResults, type SearchResultsProps } from './ui/SearchResults';
+export { SearchFacetBar, type SearchFacetBarProps } from './ui/SearchFacetBar';
 export {
   groupResults,
   resultHref,
   type SearchResult,
   type GroupedResults,
 } from './model/search';
+export {
+  applyFacets,
+  isAnyFacetActive,
+  clearFacets,
+  resolvePeriodRange,
+  DEFAULT_SEARCH_FACETS,
+  SEARCH_PERIODS,
+  type SearchFacets,
+  type SearchPeriod,
+  type PeriodRange,
+} from './model/facets';
+export { parseFacetsFromSearchParams, buildSearchHref } from './model/search-params';

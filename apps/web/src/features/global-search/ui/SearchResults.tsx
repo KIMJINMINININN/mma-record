@@ -21,6 +21,8 @@ import { Highlight } from './Highlight';
 export interface SearchResultsProps {
   results: SearchResult[];
   query: string;
+  /** 패싯(종목·기간)이 활성이고 그 결과가 0이면 패싯 안내 EmptyState로 분기(F8-AC4). */
+  facetsActive?: boolean;
 }
 
 /** 그룹 렌더 순서 + 한글 라벨 (Design §7e). */
@@ -89,14 +91,36 @@ function DISCIPLINE_META_LABEL(code: string): string {
   return meta?.label ?? code;
 }
 
-export function SearchResults({ results, query }: SearchResultsProps) {
+export function SearchResults({ results, query, facetsActive = false }: SearchResultsProps) {
+  // 패싯/검색 변경 시 결과 수 변화를 SR에 알림(RSC 재렌더 → role=status 갱신).
+  const liveStatus = (
+    <p className="sr-only" role="status">
+      {results.length === 0
+        ? facetsActive
+          ? '필터에 맞는 결과가 없습니다.'
+          : `“${query}”에 대한 결과가 없습니다.`
+        : `검색 결과 ${results.length}개.`}
+    </p>
+  );
+
   if (results.length === 0) {
     return (
-      <EmptyState
-        icon={<SearchIcon width={40} height={40} />}
-        title={`“${query}”에 대한 결과가 없습니다`}
-        description="검색 연동 후 일치하는 기술·세션·태그가 여기에 모입니다."
-      />
+      <>
+        {liveStatus}
+        {facetsActive ? (
+          <EmptyState
+            icon={<SearchIcon width={40} height={40} />}
+            title="필터에 맞는 결과가 없습니다"
+            description="필터를 초기화하면 더 많은 결과를 볼 수 있어요."
+          />
+        ) : (
+          <EmptyState
+            icon={<SearchIcon width={40} height={40} />}
+            title={`“${query}”에 대한 결과가 없습니다`}
+            description="검색 연동 후 일치하는 기술·세션·태그가 여기에 모입니다."
+          />
+        )}
+      </>
     );
   }
 
@@ -104,6 +128,7 @@ export function SearchResults({ results, query }: SearchResultsProps) {
 
   return (
     <div className="flex flex-col gap-5">
+      {liveStatus}
       {GROUP_ORDER.map(({ key, label }) => {
         const items = grouped[key];
         if (items.length === 0) return null;
