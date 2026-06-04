@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { MediaThumb, parseYoutubeVideoId, safeExternalUrl } from '@/entities/media';
-import { Button } from '@/shared/ui';
+import { Button, HIT_AREA_44_BEFORE } from '@/shared/ui';
 
 import {
   ALLOWED_UPLOAD_MIME,
@@ -324,7 +324,9 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
                   type="button"
                   aria-label="미디어 제거"
                   onClick={() => handleRemove(index)}
-                  className="absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-white outline-none transition-colors pointer-hover:bg-black/90 focus-visible:shadow-[var(--ring-focus)]"
+                  // 시각 24px 원 유지 + 중앙 투명 pseudo 로 hit-area 44(WCAG 2.5.5). 이미 absolute 라
+                  // _BEFORE(=relative 제외)만 사용(position 유틸 충돌 회피) — before 가 이 버튼 기준으로 확장.
+                  className={`absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-white outline-none transition-colors pointer-hover:bg-black/90 focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44_BEFORE}`}
                 >
                   <RemoveIcon />
                 </button>

@@ -2,6 +2,8 @@
 
 import { cva, type VariantProps } from 'class-variance-authority';
 
+import { HIT_AREA_44 } from '@/shared/ui';
+
 import { resolveTagColor, tagColorCss } from '../lib/tag-meta';
 
 /**
@@ -95,6 +97,9 @@ function CloseIcon({ size }: { size: NonNullable<ChipVariants['size']> }) {
   );
 }
 
+// hit-area 44(WCAG 2.5.5): 시각 ×(8~9px)은 유지하고 중앙 투명 pseudo 로 누르는 영역만 44.
+// 칩(h-6/h-7)은 비-clip inline-flex 라 pseudo 가 위아래로 자연히 넘쳐도 잘리지 않는다. ×는 칩 우단이라
+// 44 폭이 라벨쪽으로 일부 겹치지만(토글과 형제), 음수 inset 없이 중앙 44 가 적절(클릭은 최근접/최상단 타겟).
 const removeButtonClass = [
   'inline-flex items-center justify-center shrink-0',
   'ml-0.5 rounded-full',
@@ -102,6 +107,7 @@ const removeButtonClass = [
   'transition-colors duration-150',
   'focus-visible:outline-none focus-visible:shadow-[var(--ring-focus)]',
   'disabled:pointer-events-none',
+  HIT_AREA_44,
 ].join(' ');
 
 export function TagChip({

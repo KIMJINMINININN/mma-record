@@ -17,7 +17,14 @@ import { CLASS_TYPE_LABELS, type SessionWithDisciplines } from '@/entities/sessi
 import { fetchTechniqueTagNames, TagChip } from '@/entities/tag';
 import { fetchTechniqueMedia, YoutubeFacade, UploadVideo, ExternalLinkCard } from '@/entities/media';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
-import { Callout, ChevronLeftIcon, EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
+import {
+  Callout,
+  ChevronLeftIcon,
+  EmptyState,
+  HIT_AREA_44_Y,
+  MarkdownView,
+  Skeleton,
+} from '@/shared/ui';
 
 import { TechniqueFavoriteStar } from './TechniqueFavoriteStar';
 
@@ -99,7 +106,8 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
       <div className="mb-4 flex items-center justify-between gap-2">
         <Link
           href="/techniques"
-          className="inline-flex items-center gap-1 rounded-xxs py-1 text-button-s text-[var(--text-muted)] outline-none transition-colors pointer-hover:text-[var(--text-default)] focus-visible:shadow-[var(--ring-focus)]"
+          // 시각(텍스트+아이콘, ~24px 높이) 유지 + 세로 투명 pseudo 로 hit-area 높이 44(WCAG 2.5.5).
+          className={`inline-flex items-center gap-1 rounded-xxs py-1 text-button-s text-[var(--text-muted)] outline-none transition-colors pointer-hover:text-[var(--text-default)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44_Y}`}
         >
           <ChevronLeftIcon width={16} height={16} />
           라이브러리
@@ -117,7 +125,8 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
           {/* 수정 → 편집 폼(F4-AC1). Button secondary/sm 토큰을 입은 Link. */}
           <Link
             href={`/techniques/${techniqueId}/edit`}
-            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+            // 시각 h-8(32px) 유지 + 세로 투명 pseudo 로 hit-area 높이 44(WCAG 2.5.5) — Button sm 과 동일 처리.
+            className={`inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44_Y}`}
           >
             수정
           </Link>

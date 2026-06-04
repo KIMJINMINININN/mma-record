@@ -19,7 +19,16 @@ import {
   fetchRangeSessions,
 } from '@/entities/session';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
-import { ChevronLeftIcon, IconButton, PlusIcon, StarFilledIcon, StarIcon, TodayIcon } from '@/shared/ui';
+import {
+  ChevronLeftIcon,
+  HIT_AREA_44_BEFORE,
+  HIT_AREA_44_Y,
+  IconButton,
+  PlusIcon,
+  StarFilledIcon,
+  StarIcon,
+  TodayIcon,
+} from '@/shared/ui';
 import { useSessionEditorStore } from '@/shared/model/session-editor-store';
 
 /**
@@ -219,7 +228,8 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
               <button
                 type="button"
                 onClick={goToday}
-                className="ml-1 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+                // 시각 h-8(32px) 유지 + 세로 투명 pseudo 로 hit-area 높이 44(WCAG 2.5.5).
+                className={`ml-1 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44_Y}`}
               >
                 <TodayIcon width={16} height={16} />
                 오늘로
@@ -252,7 +262,9 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
                   aria-selected={selected}
                   tabIndex={selected ? 0 : -1}
                   onClick={() => setViewMode(t.id)}
-                  className={`inline-flex h-7 items-center rounded-xxs px-2.5 text-button-xs outline-none focus-visible:shadow-[var(--ring-focus)] ${
+                  // 시각 h-7(28px) 유지 + 중앙 투명 pseudo 로 hit-area 44(WCAG 2.5.5). tablist 컨테이너는
+                  // 비-clip(overflow 없음)이라 안 잘린다. 인접 탭 pseudo 가 겹쳐도 클릭은 최근접 타겟으로.
+                  className={`relative inline-flex h-7 items-center rounded-xxs px-2.5 text-button-xs outline-none focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44_BEFORE} ${
                     selected
                       ? 'bg-[var(--surface-base)] text-[var(--text-strong)] shadow-[var(--shadow-card)]'
                       : 'text-[var(--text-default)] pointer-hover:text-[var(--text-strong)]'
@@ -272,10 +284,12 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
               aria-label="즐겨찾기만 보기"
               aria-pressed={favoritesOnly}
               onClick={() => setFavoritesOnly((v) => !v)}
+              // 시각 h-8(32px) 유지 + 세로 투명 pseudo 로 hit-area 높이 44(WCAG 2.5.5).
               className={[
                 'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s',
                 'outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
                 'focus-visible:shadow-[var(--ring-focus)]',
+                HIT_AREA_44_Y,
                 favoritesOnly
                   ? 'bg-[var(--surface-sunken)] text-[var(--primary)]'
                   : 'text-[var(--text-default)] pointer-hover:bg-[var(--surface-sunken)]',

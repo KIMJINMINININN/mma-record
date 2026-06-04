@@ -36,7 +36,7 @@ import {
   type StrikingStyle,
   type TechniqueCategory,
 } from '@/shared/model/enums';
-import { Button, Input } from '@/shared/ui';
+import { Button, HIT_AREA_44, Input } from '@/shared/ui';
 
 /**
  * TechniqueForm — 기술 생성/편집 폼 본문 (F4-AC1 / Design §7d · Develop §874).
@@ -517,7 +517,8 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
                   type="button"
                   onClick={() => setKeptMedia((prev) => prev.filter((x) => x.id !== m.id))}
                   aria-label="연결된 미디어 제거"
-                  className="shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)]"
+                  // 시각 18px 유지 + 중앙 투명 pseudo 로 hit-area 44(WCAG 2.5.5). 부모 행은 비-clip.
+                  className={`shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44}`}
                 >
                   <svg width={10} height={10} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
                     <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />

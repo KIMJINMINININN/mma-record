@@ -2,6 +2,8 @@ import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
 import { cva, cx, type VariantProps } from 'class-variance-authority';
 
+import { HIT_AREA_44_Y } from '../icon-button/IconButton';
+
 /**
  * Button — 디자인시스템 기본 버튼 (Design §2.7 / Develop §6.5).
  *
@@ -40,8 +42,9 @@ const button = cva(
         ],
       },
       size: {
-        sm: 'h-8 px-2.5 text-button-s rounded-xxs',
-        md: 'h-10 px-3.5 text-button-m',
+        // sm·md 는 높이 < 44 → HIT_AREA_44_Y 로 세로 hit-area 보강(시각 h-8/h-10 유지). lg=48 은 이미 충족.
+        sm: `h-8 px-2.5 text-button-s rounded-xxs ${HIT_AREA_44_Y}`,
+        md: `h-10 px-3.5 text-button-m ${HIT_AREA_44_Y}`,
         lg: 'h-12 px-5 text-button-l',
       },
       block: {

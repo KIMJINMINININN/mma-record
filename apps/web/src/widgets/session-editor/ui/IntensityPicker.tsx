@@ -32,7 +32,10 @@ export function IntensityPicker({ value, onChange }: IntensityPickerProps) {
             aria-pressed={value === n}
             // 같은 값 재클릭 → 지움(토글-투-클리어), 그 외 → 해당 값으로.
             onClick={() => onChange(value === n ? null : n)}
-            className="inline-flex size-7 items-center justify-center rounded-full outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+            // 시각 size-7(28px) 유지. hit-area(WCAG 2.5.5): 5점이 gap-1.5(6px)로 촘촘해 정사각 44 폭은
+            // 이웃과 깊게 겹쳐 클릭이 모호해진다 → 세로는 44(h-11) 풀, 가로는 34(=28+gap)로 이웃과 딱 맞게
+            // 타일링(중앙 정렬, 음수 inset 없이 점 사이 빈틈 0). 부모 flex 는 비-clip 이라 pseudo 안 잘림.
+            className="relative inline-flex size-7 items-center justify-center rounded-full outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)] before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-[34px] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
           >
             <span
               aria-hidden="true"

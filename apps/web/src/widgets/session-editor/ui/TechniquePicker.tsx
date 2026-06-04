@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { fetchTechniques } from '@/entities/technique';
 import { DisciplineChip } from '@/entities/discipline';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
+import { HIT_AREA_44, HIT_AREA_44_Y } from '@/shared/ui';
 
 /**
  * TechniquePicker — 세션에 "다룬 기술" 연결 (F3/F4 / #6-2).
@@ -166,7 +167,8 @@ export function TechniquePicker({
                     type="button"
                     onClick={() => remove(draft.technique_id)}
                     aria-label={`다룬 기술 ${t?.name ?? ''} 제거`}
-                    className="shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)]"
+                    // 시각 18px 유지 + 중앙 투명 pseudo 로 hit-area 44(WCAG 2.5.5). 부모 flex 행은 비-clip.
+                    className={`shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44}`}
                   >
                     <svg width={10} height={10} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
                       <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
@@ -266,7 +268,8 @@ export function TechniquePicker({
       <div>
         <Link
           href="/techniques/new"
-          className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+          // 시각 h-8(32px) 유지 + 세로 투명 pseudo 로 hit-area 높이 44(WCAG 2.5.5) — Button sm 과 동일 처리.
+          className={`inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44_Y}`}
         >
           + 새 기술 만들기
         </Link>

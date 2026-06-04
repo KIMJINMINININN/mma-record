@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { TodayIcon } from '@/shared/ui';
+import { HIT_AREA_44_Y, TodayIcon } from '@/shared/ui';
 import { SearchBar } from './SearchBar';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -24,7 +24,8 @@ export function TopBar() {
       {/* TODO(F2): 캘린더가 ?date 쿼리를 읽도록 되면 `/calendar?date=<today-KST>`로 교체. */}
       <Link
         href="/calendar"
-        className="hidden h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)] sm:inline-flex"
+        // 시각 h-8(32px) 유지 + 세로 투명 pseudo 로 hit-area 높이 44(WCAG 2.5.5). sm↑에서만 노출(hidden→inline-flex).
+        className={`hidden h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)] sm:inline-flex ${HIT_AREA_44_Y}`}
       >
         <TodayIcon width={16} height={16} />
         오늘로

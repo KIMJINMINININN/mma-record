@@ -62,13 +62,13 @@ export function TechniqueLibrary() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((t) => (
             // 카드 전체가 <Link>라 별표 버튼을 안에 못 넣는다(중첩 인터랙티브) → 카드 밖 절대배치 오버레이.
+            // 절대배치는 래퍼 span 에 둔다 — 별표(IconButton)는 hit-area pseudo 때문에 `relative` 를
+            // 자체적으로 갖는다. 같은 버튼에 absolute 를 또 주면 position 유틸이 충돌하므로 분리한다.
             <div key={t.id} className="relative">
               <TechniqueCard technique={t} />
-              <TechniqueFavoriteStar
-                techniqueId={t.id}
-                isFavorite={t.is_favorite}
-                className="absolute right-1.5 top-1.5 bg-[var(--surface-raised)] shadow-[var(--shadow-card)]"
-              />
+              <span className="absolute right-1.5 top-1.5 inline-flex rounded-xxs bg-[var(--surface-raised)] shadow-[var(--shadow-card)]">
+                <TechniqueFavoriteStar techniqueId={t.id} isFavorite={t.is_favorite} />
+              </span>
             </div>
           ))}
         </div>
