@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import {
   BackHandler,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -14,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebViewErrorEvent } from 'react-native-webview/lib/WebViewTypes';
 import useWebview from '@/hooks/webview/use-webview';
 import { useWebviewMessage } from '@/hooks/webview/use-webview-message';
+import { saveSession, clearSession, updateRefreshToken } from '@/hooks/webview/auth-storage';
+import { ENV } from '@/config/env';
 
 export default function WebViewScreen() {
   const navState = useRef<WebViewNavigation | null>(null);
@@ -48,6 +51,12 @@ export default function WebViewScreen() {
   const { onMessage } = useWebviewMessage({
     sendToWebview,
     webviewRef,
+    // 웹 로그인/로그아웃 핸드오프 → SecureStore 토큰 보관(E-AUTH). 토큰 사용처(네이티브 API)는 후속.
+    auth: {
+      onLogin: saveSession,
+      onLogout: clearSession,
+      onTokenRefresh: ({ refreshToken }) => updateRefreshToken(refreshToken),
+    },
   });
 
   function handleWebviewError(e: WebViewErrorEvent) {
@@ -66,6 +75,14 @@ export default function WebViewScreen() {
         <WebView
           ref={webviewRef}
           source={{ uri: webviewUrl }}
+          // 보안(E-AUTH): 신뢰 origin(CLIENT_URL)만 WebView 로드 — 외부/악성 페이지의 postMessage 표면 차단.
+          // AUTH_* 핸들러가 SecureStore 토큰을 쓰므로(세션 고정/DoS 방지) 필수. 외부 링크는 외부 브라우저로.
+          originWhitelist={[ENV.CLIENT_URL]}
+          onShouldStartLoadWithRequest={(req) => {
+            if (req.url.startsWith(ENV.CLIENT_URL)) return true;
+            Linking.openURL(req.url).catch(() => undefined);
+            return false;
+          }}
           onMessage={onMessage}
           javaScriptEnabled
           allowsBackForwardNavigationGestures

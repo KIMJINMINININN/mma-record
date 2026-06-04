@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/widgets/app-shell';
 import { SessionEditorHost } from '@/widgets/session-editor';
+import { WebViewAuthBridge } from '@/features/webview-auth';
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 
@@ -32,6 +33,7 @@ export default async function AppGroupLayout({ children }: { children: ReactNode
     <>
       <AppShell>{children}</AppShell>
       <SessionEditorHost />
+      <WebViewAuthBridge />
     </>
   );
 }
