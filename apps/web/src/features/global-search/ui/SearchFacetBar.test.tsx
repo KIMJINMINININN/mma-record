@@ -15,10 +15,11 @@ afterEach(() => {
 });
 
 describe('SearchFacetBar', () => {
-  it('현재 패싯 값이 select에 반영', () => {
-    render(<SearchFacetBar query="guard" facets={{ discipline: 'bjj_gi', period: 'month' }} />);
+  it('현재 패싯 값이 select에 반영(종목·기간·벨트)', () => {
+    render(<SearchFacetBar query="guard" facets={{ discipline: 'bjj_gi', period: 'month', belt: 'blue' }} />);
     expect((screen.getByLabelText('종목 필터') as HTMLSelectElement).value).toBe('bjj_gi');
     expect((screen.getByLabelText('기간 필터') as HTMLSelectElement).value).toBe('month');
+    expect((screen.getByLabelText('벨트 필터') as HTMLSelectElement).value).toBe('blue');
   });
 
   it('종목 변경 → router.replace(href, q+discipline 보존)', async () => {
@@ -28,9 +29,16 @@ describe('SearchFacetBar', () => {
     expect(replace).toHaveBeenCalledWith('/search?q=guard&discipline=wrestling');
   });
 
+  it('벨트 변경 → router.replace(belt 반영)', async () => {
+    const user = userEvent.setup();
+    render(<SearchFacetBar query="guard" facets={DEFAULT_SEARCH_FACETS} />);
+    await user.selectOptions(screen.getByLabelText('벨트 필터'), 'blue');
+    expect(replace).toHaveBeenCalledWith('/search?q=guard&belt=blue');
+  });
+
   it("기간 'all' 선택 → period 제거", async () => {
     const user = userEvent.setup();
-    render(<SearchFacetBar query="guard" facets={{ discipline: null, period: 'month' }} />);
+    render(<SearchFacetBar query="guard" facets={{ discipline: null, period: 'month', belt: null }} />);
     await user.selectOptions(screen.getByLabelText('기간 필터'), 'all');
     expect(replace).toHaveBeenCalledWith('/search?q=guard');
   });
@@ -42,7 +50,7 @@ describe('SearchFacetBar', () => {
 
   it('패싯 활성 시 초기화 → default href', async () => {
     const user = userEvent.setup();
-    render(<SearchFacetBar query="guard" facets={{ discipline: 'mma', period: null }} />);
+    render(<SearchFacetBar query="guard" facets={{ discipline: 'mma', period: null, belt: null }} />);
     await user.click(screen.getByRole('button', { name: '필터 초기화' }));
     expect(replace).toHaveBeenCalledWith('/search?q=guard');
   });

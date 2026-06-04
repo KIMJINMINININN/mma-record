@@ -1,16 +1,16 @@
 import dayjs from 'dayjs';
 
-import { DISCIPLINES, type Discipline } from '@/shared/model/enums';
+import { DISCIPLINES, type Belt, type Discipline } from '@/shared/model/enums';
 
 import type { SearchResult } from './search';
 
 /**
  * 검색 패싯(종목/기간) — 순수 함수 (F8-AC4 / Design §7e). React/Supabase 의존 없음.
  *
- * search_all RPC는 facet 컬럼을 주지 않으므로(belt 미투영 — 벨트 패싯은 RPC 마이그레이션 후속),
- * 종목은 technique 행의 subtitle(종목 코드), 기간은 session 행의 subtitle(YYYY-MM-DD)에서 파생해
- * **클라이언트에서** 거른다. **대칭 규칙(symmetric keep-non-domain-rows)**: 종목 패싯은 technique 행만,
- * 기간 패싯은 session 행만 제약하고 — 그 외 종류(특히 tag) 행은 두 패싯 모두 통과시킨다.
+ * 종목은 technique 행의 subtitle(종목 코드), 벨트는 technique 행의 belt 컬럼(0019 투영), 기간은
+ * session 행의 subtitle(YYYY-MM-DD)에서 파생해 **클라이언트에서** 거른다.
+ * **대칭 규칙(symmetric keep-non-domain-rows)**: 종목·벨트 패싯은 technique 행만, 기간 패싯은 session
+ * 행만 제약하고 — 그 외 종류(특히 tag) 행은 모든 패싯을 통과시킨다.
  *
  * 주의(p_limit): 클라 패싯은 RPC가 이미 돌려준 상위 N행만 거른다(page에서 패싯 활성 시 limit 상향).
  * 전수 필터가 아니다 — 큰 결과셋에서 일부 누락 가능(문서화된 한계, RPC 파라미터화는 후속).
@@ -23,16 +23,18 @@ export interface SearchFacets {
   discipline: Discipline | null;
   /** null = 전체 기간('all'). */
   period: Exclude<SearchPeriod, 'all'> | null;
+  /** 벨트 패싯 — technique 행만 제약(주짓수 belt 코드). null = 전체. */
+  belt: Belt | null;
 }
 
-export const DEFAULT_SEARCH_FACETS: SearchFacets = { discipline: null, period: null };
+export const DEFAULT_SEARCH_FACETS: SearchFacets = { discipline: null, period: null, belt: null };
 
 export function isAnyFacetActive(f: SearchFacets): boolean {
-  return f.discipline !== null || f.period !== null;
+  return f.discipline !== null || f.period !== null || f.belt !== null;
 }
 
 export function clearFacets(f: SearchFacets): SearchFacets {
-  return { ...f, discipline: null, period: null };
+  return { ...f, discipline: null, period: null, belt: null };
 }
 
 export interface PeriodRange {
@@ -71,6 +73,10 @@ export function applyFacets(results: SearchResult[], f: SearchFacets, today: str
   return results.filter((r) => {
     if (f.discipline !== null && r.result_type === 'technique') {
       if (!isDisciplineSubtitle(r.subtitle) || r.subtitle !== f.discipline) return false;
+    }
+    // 벨트 패싯도 종목과 동일한 대칭 규칙 — technique 행만 belt 로 제약(세션/태그는 통과).
+    if (f.belt !== null && r.result_type === 'technique') {
+      if (r.belt !== f.belt) return false;
     }
     if (range !== null && r.result_type === 'session') {
       if (!isSessionDateInRange(r.subtitle, range)) return false;

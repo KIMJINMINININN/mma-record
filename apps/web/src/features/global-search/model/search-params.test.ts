@@ -3,11 +3,15 @@ import { parseFacetsFromSearchParams, buildSearchHref } from './search-params';
 import { DEFAULT_SEARCH_FACETS, type SearchFacets } from './facets';
 
 describe('parseFacetsFromSearchParams', () => {
-  it('유효 값 파싱', () => {
-    expect(parseFacetsFromSearchParams({ discipline: 'bjj_gi', period: 'month' })).toEqual({
+  it('유효 값 파싱(belt 포함)', () => {
+    expect(parseFacetsFromSearchParams({ discipline: 'bjj_gi', period: 'month', belt: 'blue' })).toEqual({
       discipline: 'bjj_gi',
       period: 'month',
+      belt: 'blue',
     });
+  });
+  it('미지 벨트 → null', () => {
+    expect(parseFacetsFromSearchParams({ belt: 'rainbow' }).belt).toBeNull();
   });
   it('미지 종목 → null', () => {
     expect(parseFacetsFromSearchParams({ discipline: 'xyz' }).discipline).toBeNull();
@@ -30,19 +34,21 @@ describe('buildSearchHref', () => {
   it('빈 쿼리 + default → /search', () => {
     expect(buildSearchHref('', DEFAULT_SEARCH_FACETS)).toBe('/search');
   });
-  it('쿼리 + 패싯 → q·discipline·period 순서', () => {
-    expect(buildSearchHref('guard', { discipline: 'bjj_gi', period: 'month' })).toBe(
-      '/search?q=guard&discipline=bjj_gi&period=month',
+  it('쿼리 + 패싯 → q·discipline·belt·period 순서', () => {
+    expect(buildSearchHref('guard', { discipline: 'bjj_gi', period: 'month', belt: 'blue' })).toBe(
+      '/search?q=guard&discipline=bjj_gi&belt=blue&period=month',
     );
   });
   it('null 패싯 생략', () => {
-    expect(buildSearchHref('x', { discipline: 'mma', period: null })).toBe('/search?q=x&discipline=mma');
+    expect(buildSearchHref('x', { discipline: 'mma', period: null, belt: null })).toBe(
+      '/search?q=x&discipline=mma',
+    );
   });
   it('q는 encodeURIComponent(공백·&)', () => {
     expect(buildSearchHref('a b&c', DEFAULT_SEARCH_FACETS)).toBe('/search?q=a%20b%26c');
   });
-  it('라운드트립: parse(build) === facets', () => {
-    const f: SearchFacets = { discipline: 'wrestling', period: '90d' };
+  it('라운드트립: parse(build) === facets (belt 포함)', () => {
+    const f: SearchFacets = { discipline: 'wrestling', period: '90d', belt: 'purple' };
     const href = buildSearchHref('q', f);
     const qs = href.split('?')[1] ?? '';
     const params = new URLSearchParams(qs);
@@ -50,6 +56,7 @@ describe('buildSearchHref', () => {
       parseFacetsFromSearchParams({
         discipline: params.get('discipline') ?? undefined,
         period: params.get('period') ?? undefined,
+        belt: params.get('belt') ?? undefined,
       }),
     ).toEqual(f);
   });

@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 
 import { DISCIPLINE_META } from '@/entities/discipline';
-import { DISCIPLINES, type Discipline } from '@/shared/model/enums';
+import { BELT_META } from '@/entities/rank';
+import { BELTS, DISCIPLINES, type Belt, type Discipline } from '@/shared/model/enums';
 import { Button } from '@/shared/ui';
 
 import {
@@ -18,8 +19,8 @@ import { buildSearchHref } from '../model/search-params';
 /**
  * SearchFacetBar — 검색 패싯 바(종목·기간) (F8-AC4 / Design §7e). TechniqueFilterBar SELECT_BASE 미러.
  *
- * 패싯은 URL(?q&discipline&period) 구동 — 변경 시 router.replace(히스토리 누적 없음)로 갱신하면
- * /search RSC가 다시 렌더되며 applyFacets가 서버에서 적용된다. 벨트 패싯은 RPC 미투영으로 후속(제외).
+ * 패싯은 URL(?q&discipline&belt&period) 구동 — 변경 시 router.replace(히스토리 누적 없음)로 갱신하면
+ * /search RSC가 다시 렌더되며 applyFacets가 서버에서 적용된다. 벨트는 0019 belt 투영 후 추가(주짓수 기술).
  */
 
 const PERIOD_LABEL: Record<SearchPeriod, string> = {
@@ -60,6 +61,20 @@ export function SearchFacetBar({ query, facets }: SearchFacetBarProps) {
         {DISCIPLINES.map((d) => (
           <option key={d} value={d}>
             {DISCIPLINE_META[d].label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        aria-label="벨트 필터"
+        value={facets.belt ?? ''}
+        onChange={(e) => go({ ...facets, belt: (e.target.value || null) as Belt | null })}
+        className={SELECT_BASE}
+      >
+        <option value="">벨트 전체</option>
+        {BELTS.map((b) => (
+          <option key={b} value={b}>
+            {BELT_META[b].label}
           </option>
         ))}
       </select>

@@ -22,7 +22,12 @@ import { EmptyState, SearchIcon } from '@/shared/ui';
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string | string[]; discipline?: string | string[]; period?: string | string[] }>;
+  searchParams: Promise<{
+    q?: string | string[];
+    discipline?: string | string[];
+    period?: string | string[];
+    belt?: string | string[];
+  }>;
 }) {
   const sp = await searchParams;
   const raw = Array.isArray(sp.q) ? sp.q[0] : sp.q;

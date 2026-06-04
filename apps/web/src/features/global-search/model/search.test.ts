@@ -12,7 +12,7 @@ function makeResult(
   subtitle: string | null = null,
   rank = 1.0,
 ): SearchResult {
-  return { result_type, result_id, title: `${result_type}-${result_id}`, subtitle, rank };
+  return { result_type, result_id, title: `${result_type}-${result_id}`, subtitle, belt: null, rank };
 }
 
 // ---------------------------------------------------------------------------

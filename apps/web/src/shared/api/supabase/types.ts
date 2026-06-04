@@ -490,6 +490,7 @@ export type Database = {
       search_all: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
+          belt: string
           rank: number
           result_id: string
           result_type: string

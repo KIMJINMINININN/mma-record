@@ -14,6 +14,8 @@ export interface SearchResult {
   title: string;
   /** 부가표시(기술=종목 코드, 세션=YYYY-MM-DD, 태그=null). */
   subtitle: string | null;
+  /** 벨트(기술 행만 — 주짓수면 belt 코드; 비벨트 종목·세션·태그는 null). 벨트 패싯용(F8-AC4, 0019 투영). */
+  belt: string | null;
   /** RPC hybrid rank (prefix 1.0 > substring 0.7 > trigram). */
   rank: number;
 }

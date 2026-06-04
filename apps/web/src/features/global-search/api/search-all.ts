@@ -32,6 +32,7 @@ export async function searchAll(query: string, limit = 30): Promise<SearchResult
     result_id: row.result_id,
     title: row.title,
     subtitle: row.subtitle,
+    belt: row.belt,
     rank: row.rank,
   }));
 }
