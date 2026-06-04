@@ -158,7 +158,7 @@ export function TechniqueFilterBar({ filters, onChange }: TechniqueFilterBarProp
         ) : (
           <StarIcon width={14} height={14} />
         )}
-        즐겨찾기
+        즐겨찾기만
       </button>
 
       {/* 정렬 (분리 — 필터 토글에 영향 없음) */}

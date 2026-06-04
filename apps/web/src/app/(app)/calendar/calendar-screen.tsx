@@ -300,7 +300,7 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
               ) : (
                 <StarIcon width={16} height={16} />
               )}
-              즐겨찾기
+              즐겨찾기만
             </button>
           )}
 
