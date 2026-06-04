@@ -9,6 +9,8 @@
 
 ## 🟢 다음 시작점 (여기부터)
 
+> **⏩ 최신 (2026-06-04):** P1 고도화 대거 진행 — shadcn 어댑터 · A/B 컴포넌트 테스트 · 즐겨찾기 cross-month 뷰 · 🟢(터치타깃 44px · F5 외부링크 · calendar 스크린테스트 · QA 라벨) · **C F8 벨트 패싯(migration 0019)** · **E-AUTH 모바일 인증 브릿지**. **prod 마이그 0017/0018/0019 적용 + main 배포(C까지 `6002e4f`; E-AUTH `9e19b5c`는 feat 미배포)**. web vitest 1095 green. **다음 시작점·할 일·고도화 백로그·배포검증 미완은 전부 → `docs/issue/20260604/next-session-handoff.md`**. ⚠ Vercel 빌드 확인 + prod §6 검증 + E-AUTH 실 CLIENT_URL은 사장님.
+
 **어디까지 왔나 (2026-06-02 PM):** 🚀 **프로덕션 라이브.** Vercel 배포 완료(Root Directory=`apps/web`) · 실 Supabase 연결 · 회원가입/로그인 동작 확인. P0 기능 전부 라이브 + **테스트 인프라 구축(826 통과)**. 게이트 전부 green(typecheck·lint·build·vitest·gitleaks). 마지막 push = `e0112f3`. 배포 절차/트러블슈팅 상세 = `docs/mma/VERCEL_DEPLOY.md`.
 
 **✅ 이번 세션 완료 (2026-06-02 PM):**
