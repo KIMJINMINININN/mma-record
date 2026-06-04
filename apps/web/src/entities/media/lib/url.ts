@@ -23,3 +23,17 @@ export function urlHost(raw: string): string | null {
     return null;
   }
 }
+
+/**
+ * 도메인 식별 아바타 — 첫 글자 + host 해시 hue(0~359) + 표시용 도메인(www. 제거).
+ * 외부 서비스/키 없이 순수 계산이라(favicon 스크래핑·OG fetch 회피) 클라에서 즉시 동작한다.
+ * 진짜 OG 메타(자동 제목/이미지)는 서버 fetch가 필요해 별도 트랙 — 이건 그 경량 대체(F5 external).
+ */
+export function domainAvatar(host: string): { letter: string; hue: number; label: string } {
+  const label = host.replace(/^www\./, '');
+  const letter = (label[0] ?? '?').toUpperCase();
+  // 결정적 해시(곱셈 31) → hue. Date/Math.random 미사용(순수·SSR 안전).
+  let hash = 0;
+  for (let i = 0; i < label.length; i += 1) hash = (hash * 31 + label.charCodeAt(i)) % 360;
+  return { letter, hue: hash, label };
+}

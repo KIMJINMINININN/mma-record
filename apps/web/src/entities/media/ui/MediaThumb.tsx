@@ -3,6 +3,7 @@ import type { SVGProps } from 'react';
 import type { MediaKind } from '@/shared/model/enums';
 
 import { buildYoutubeThumbnailUrl } from '../lib/youtube';
+import { domainAvatar } from '../lib/url';
 
 /**
  * MediaThumb — 미디어 썸네일 타일 (F5 / Design §9.1).
@@ -25,6 +26,8 @@ export interface MediaThumbProps {
   thumbnailUrl?: string | null;
   /** 업로드 길이(초) — 있으면 우하단 길이 배지. */
   durationSec?: number | null;
+  /** kind='external'일 때 호스트(도메인 아바타·라벨용). 없으면 🔗 placeholder. */
+  host?: string | null;
   alt?: string;
   className?: string;
 }
@@ -68,6 +71,7 @@ export function MediaThumb({
   youtubeVideoId = null,
   thumbnailUrl = null,
   durationSec = null,
+  host = null,
   alt,
   className,
 }: MediaThumbProps) {
@@ -119,10 +123,29 @@ export function MediaThumb({
     );
   }
 
-  // ── external: 🔗 링크 placeholder ──
+  // ── external: 도메인 아바타(첫글자 + host 해시 색) + 도메인 라벨. host 없으면 🔗 placeholder. ──
+  const avatar = host ? domainAvatar(host) : null;
   return (
     <div className={cls}>
-      <PlaceholderBody label="외부 링크" glyph="🔗" />
+      {avatar ? (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 px-2">
+          <span
+            aria-hidden="true"
+            className="flex size-10 items-center justify-center rounded-full text-body-m-400 text-white"
+            style={{ backgroundColor: `hsl(${avatar.hue} 55% 42%)` }}
+          >
+            {avatar.letter}
+          </span>
+          <span className="max-w-full truncate text-body-xs-400 text-[var(--text-muted)]">
+            {avatar.label}
+          </span>
+        </div>
+      ) : (
+        <PlaceholderBody label="외부 링크" glyph="🔗" />
+      )}
+      <span className="absolute right-1.5 top-1.5 rounded-xxs bg-[var(--surface-raised)] px-1.5 py-0.5 text-button-xs text-[var(--text-muted)]">
+        <span aria-hidden="true">↗</span> 링크
+      </span>
     </div>
   );
 }

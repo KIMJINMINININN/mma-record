@@ -18,23 +18,27 @@ export function ExternalLinkCard({ url, title, className }: ExternalLinkCardProp
   const safe = safeExternalUrl(url);
   if (!safe) return null;
   const host = urlHost(safe);
-  const caption = title?.trim() || host || safe;
+  const a11yLabel = title?.trim() || host || safe;
+  // 표시 caption 은 제목만 — 도메인은 타일(MediaThumb 도메인 아바타 라벨)에 이미 있어 중복을 피한다.
+  const caption = title?.trim() || null;
 
   return (
     <a
       href={safe}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${caption} (새 탭에서 열림)`}
+      aria-label={`${a11yLabel} (새 탭에서 열림)`}
       className={[
         'block rounded-m outline-none focus-visible:shadow-[var(--ring-focus)]',
         className ?? '',
       ].join(' ')}
     >
-      <MediaThumb kind="external" />
-      <p className="mt-1 truncate text-body-xs-400 text-[var(--text-muted)]" title={caption}>
-        {caption}
-      </p>
+      <MediaThumb kind="external" host={host} />
+      {caption && (
+        <p className="mt-1 truncate text-body-xs-400 text-[var(--text-muted)]" title={caption}>
+          {caption}
+        </p>
+      )}
     </a>
   );
 }
