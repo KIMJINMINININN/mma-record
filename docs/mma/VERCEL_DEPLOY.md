@@ -101,10 +101,11 @@ pnpm web build               # next build  ← 이게 통과하면 Vercel 빌드
 
 ## 5. 배포 실행 & 재배포 규칙
 
-0. **(컬럼 추가 마이그레이션 선적용)** 새 컬럼을 더하는 마이그레이션(0017 technique level · 0018 즐겨찾기)은 **코드 배포 전에** 원격 DB에 적용한다: `pnpm web db:push`(0017·0018 적용) → 대시보드에서 `techniques.level` · `techniques.is_favorite` · `sessions.is_favorite` 컬럼 확인 → `pnpm web db:types`(타입 재생성, 정상이면 no-op diff). 코드를 먼저 배포하면:
+0. **(스키마 마이그레이션 선적용)** 컬럼/RPC를 바꾸는 마이그레이션(0017 technique level · 0018 즐겨찾기 · 0019 search_all belt)은 **코드 배포 전에** 원격 DB에 적용한다: `pnpm web db:push`(0017·0018·0019 적용) → 대시보드에서 `techniques.level` · `techniques.is_favorite` · `sessions.is_favorite` 컬럼 + `search_all` 반환에 `belt` 확인 → `pnpm web db:types`(타입 재생성). 코드를 먼저 배포하면:
    - 0017 미적용 → 기술 생성/편집이 PGRST204("Could not find the 'level' column")로 실패.
    - 0018 미적용 → 즐겨찾기 별표 토글(toggleTechniqueFavorite/toggleSessionFavorite)만 실패. 기존 생성/편집·세션 기록은 is_favorite 미전송이라 무사.
-   (읽기는 모두 안전.) CI가 마이그레이션을 적용하지 않으므로(빌드 명령은 `next build`뿐) 이 단계는 수동이다.
+   - 0019 미적용 → 글로벌 검색은 동작하나 `search_all`이 belt 미반환 → **벨트 패싯만** 무효(검색·종목·기간 패싯은 정상).
+   (읽기는 모두 안전.) **db:types 주의**: `search_all`은 스키마 유일 RETURNS TABLE 함수라 생성기가 belt를 `string | null`(+ 기존 subtitle/title도 nullable로 flip)로 낼 수 있다 — diff가 no-op이 아니면 **그 산출물을 채택**한다(현재 수동 반영분 `belt: string`은 best-guess). CI가 마이그레이션을 적용하지 않으므로(빌드 명령은 `next build`뿐) 이 단계는 수동이다.
 1. §2~§4 완료 후 **Deploy**. (또는 `main`에 푸시하면 프로덕션 배포 트리거 — 0번 선적용을 반드시 먼저.)
 2. **`NEXT_PUBLIC_*` 변경 시 → Deployments → 최신 → Redeploy** (빌드 인라인이라 재빌드 필수).
 3. 서버 전용 변수(`SUPABASE_SECRET_KEY`, `YOUTUBE_API_KEY`)는 런타임 주입이라 즉시 반영(런타임 재시작), 단 빌드 캐시 영향 없으면 보통 Redeploy 불필요.
@@ -118,7 +119,7 @@ pnpm web build               # next build  ← 이게 통과하면 Vercel 빌드
 - [ ] 로그인 후 `/techniques` → **프리셋 41종**이 보인다(시드 라이브 확인).
 - [ ] 세션 기록(FAB) → 저장 → `/calendar` 그날 셀에 반영(쿼리 invalidate).
 - [ ] 세션/기술 **미디어**: 유튜브 임베드 재생 + 파일 업로드(sign→PUT→`media_assets`→서명URL 재생) 동작.
-- [ ] **태그**: attach + AND 필터 + 표시. **글로벌 검색**: `/search?q=` 결과 그룹.
+- [ ] **태그**: attach + AND 필터 + 표시. **글로벌 검색**: `/search?q=` 결과 그룹 + **패싯(종목·벨트·기간)** 필터.
 - [ ] **딥링크**: `/calendar?date=YYYY-MM-DD` 진입 시 해당 날짜 선택.
 - [ ] 콘솔/네트워크: "URL and Key required" 류 에러 없음(§8-A).
 
