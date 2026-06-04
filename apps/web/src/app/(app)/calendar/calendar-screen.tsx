@@ -12,7 +12,12 @@ import {
   groupSessionsByDateMap,
   weekRange,
 } from '@/widgets/day-detail';
-import { fetchCalendarDaySummaries, fetchDaySessions, fetchRangeSessions } from '@/entities/session';
+import {
+  fetchCalendarDaySummaries,
+  fetchDaySessions,
+  fetchFavoriteSessions,
+  fetchRangeSessions,
+} from '@/entities/session';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { ChevronLeftIcon, IconButton, PlusIcon, StarFilledIcon, StarIcon, TodayIcon } from '@/shared/ui';
 import { useSessionEditorStore } from '@/shared/model/session-editor-store';
@@ -34,12 +39,13 @@ import { useSessionEditorStore } from '@/shared/model/session-editor-store';
  * `initialDateISO` prop으로 내려준다. (app)은 점등 후 동적 `ƒ`.
  */
 
-type CalendarViewMode = 'month' | 'week' | 'agenda';
+type CalendarViewMode = 'month' | 'week' | 'agenda' | 'favorites';
 
 const VIEW_TABS: { id: CalendarViewMode; label: string }[] = [
   { id: 'month', label: '월' },
   { id: 'week', label: '주' },
   { id: 'agenda', label: '아젠다' },
+  { id: 'favorites', label: '즐겨찾기' },
 ];
 
 /** dayjs 기본 로케일이 영어라 월 라벨은 직접 조립("2026년 5월"). */
@@ -76,6 +82,7 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
     month: null,
     week: null,
     agenda: null,
+    favorites: null,
   });
 
   // 세션 에디터 오픈(F3) — shared 오버레이 스토어. 선택/지정 날짜를 프리셋한다.
@@ -122,6 +129,13 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
     queryFn: () => fetchRangeSessions(monthStartISO, monthEndISO),
     enabled: authed && viewMode === 'agenda',
   });
+  // 즐겨찾기: 전 기간 is_favorite 세션(cross-month) → AgendaView 재사용(최신순). 기간 무관 단일 쿼리.
+  // 저장/토글 후 ['calendar'] 프리픽스 invalidate가 이 키도 함께 갱신(SessionEditorForm·FavoriteStar).
+  const { data: favoriteSessions = [] } = useQuery({
+    queryKey: ['calendar', 'favorites'],
+    queryFn: fetchFavoriteSessions,
+    enabled: authed && viewMode === 'favorites',
+  });
 
   // "즐겨찾기만" 기간내 필터 — 세 세션 목록(월 상세/주/아젠다)에 동일 적용. 월 그리드 점/카운트는
   // calendar_day_summary(별도 소스)라 영향 없음(요약 뷰는 전체 집계 유지 — 문서화된 의도).
@@ -133,6 +147,8 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
   // 활성 뷰의 (즐겨찾기 필터 후) 세션 수 — 토글 시 SR 안내용(WCAG 4.1.3).
   const activeCount =
     viewMode === 'week' ? weekFiltered.length : viewMode === 'agenda' ? agenda.length : daySessions.length;
+  // 즐겨찾기 뷰 = cross-month 컬렉션 → 기간 네비/오늘로/즐겨찾기만 토글을 숨긴다(기간 모델과 무관).
+  const isFavorites = viewMode === 'favorites';
 
   // ── 네비게이션 (모드별) ────────────────────────────────────────────────
   // 월 네비 — 표시 달과 선택일을 **함께** 이동(선택일은 새 달의 같은 일자, 말일 초과 시 클램프).
@@ -181,29 +197,35 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
     <div className="mx-auto max-w-6xl">
       {/* ── 상단바: 월/주 네비 ‹ 라벨 › + 뷰탭 [월][주][아젠다] + 오늘로 + 세션 (Design §7a) ── */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        {/* 네비 */}
+        {/* 네비 — 기간 뷰(월/주/아젠다)만. 즐겨찾기(cross-month)는 기간 네비 없이 제목만. */}
         <div className="flex items-center gap-1">
-          <IconButton aria-label={viewMode === 'week' ? '이전 주' : '이전 달'} size="sm" onClick={goPrev}>
-            <ChevronLeftIcon width={20} height={20} />
-          </IconButton>
-          <h1
-            className="min-w-[7.5rem] text-center text-heading-l text-[var(--text-strong)] tabular-nums"
-            aria-live="polite"
-          >
-            {headerLabel}
-          </h1>
-          <IconButton aria-label={viewMode === 'week' ? '다음 주' : '다음 달'} size="sm" onClick={goNext}>
-            {/* ChevronLeft를 좌우반전해 우향 화살표로 재사용(아이콘 추가 없이). */}
-            <ChevronLeftIcon width={20} height={20} className="-scale-x-100" />
-          </IconButton>
-          <button
-            type="button"
-            onClick={goToday}
-            className="ml-1 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
-          >
-            <TodayIcon width={16} height={16} />
-            오늘로
-          </button>
+          {isFavorites ? (
+            <h1 className="text-heading-l text-[var(--text-strong)]">즐겨찾기</h1>
+          ) : (
+            <>
+              <IconButton aria-label={viewMode === 'week' ? '이전 주' : '이전 달'} size="sm" onClick={goPrev}>
+                <ChevronLeftIcon width={20} height={20} />
+              </IconButton>
+              <h1
+                className="min-w-[7.5rem] text-center text-heading-l text-[var(--text-strong)] tabular-nums"
+                aria-live="polite"
+              >
+                {headerLabel}
+              </h1>
+              <IconButton aria-label={viewMode === 'week' ? '다음 주' : '다음 달'} size="sm" onClick={goNext}>
+                {/* ChevronLeft를 좌우반전해 우향 화살표로 재사용(아이콘 추가 없이). */}
+                <ChevronLeftIcon width={20} height={20} className="-scale-x-100" />
+              </IconButton>
+              <button
+                type="button"
+                onClick={goToday}
+                className="ml-1 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+              >
+                <TodayIcon width={16} height={16} />
+                오늘로
+              </button>
+            </>
+          )}
         </div>
 
         {/* 뷰탭 + 세션 추가 */}
@@ -242,28 +264,31 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
             })}
           </div>
 
-          {/* 즐겨찾기만 — 세션 목록(월 상세/주/아젠다)을 즐겨찾기로 거름(PRD §9 P1). aria-pressed 토글. */}
-          <button
-            type="button"
-            aria-label="즐겨찾기만 보기"
-            aria-pressed={favoritesOnly}
-            onClick={() => setFavoritesOnly((v) => !v)}
-            className={[
-              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s',
-              'outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
-              'focus-visible:shadow-[var(--ring-focus)]',
-              favoritesOnly
-                ? 'bg-[var(--surface-sunken)] text-[var(--primary)]'
-                : 'text-[var(--text-default)] pointer-hover:bg-[var(--surface-sunken)]',
-            ].join(' ')}
-          >
-            {favoritesOnly ? (
-              <StarFilledIcon width={16} height={16} />
-            ) : (
-              <StarIcon width={16} height={16} />
-            )}
-            즐겨찾기
-          </button>
+          {/* 즐겨찾기만 — 세션 목록(월 상세/주/아젠다)을 즐겨찾기로 거름(PRD §9 P1). aria-pressed 토글.
+              즐겨찾기 뷰에선 중복이라 숨긴다(그 뷰 자체가 전 기간 즐겨찾기 전용). */}
+          {!isFavorites && (
+            <button
+              type="button"
+              aria-label="즐겨찾기만 보기"
+              aria-pressed={favoritesOnly}
+              onClick={() => setFavoritesOnly((v) => !v)}
+              className={[
+                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s',
+                'outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+                'focus-visible:shadow-[var(--ring-focus)]',
+                favoritesOnly
+                  ? 'bg-[var(--surface-sunken)] text-[var(--primary)]'
+                  : 'text-[var(--text-default)] pointer-hover:bg-[var(--surface-sunken)]',
+              ].join(' ')}
+            >
+              {favoritesOnly ? (
+                <StarFilledIcon width={16} height={16} />
+              ) : (
+                <StarIcon width={16} height={16} />
+              )}
+              즐겨찾기
+            </button>
+          )}
 
           {/* 세션 에디터 오픈(F3) — 선택 날짜 프리셋. 전역 FAB와 함께 진입점. */}
           <button
@@ -306,6 +331,14 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
 
         {viewMode === 'agenda' && (
           <CalendarAgendaView monthISO={monthKey} sessions={agenda} />
+        )}
+
+        {viewMode === 'favorites' && (
+          <CalendarAgendaView
+            sessions={favoriteSessions}
+            emptyTitle="즐겨찾기한 세션이 없습니다"
+            emptyDescription="세션 카드의 별표(★)를 누르면 전 기간 즐겨찾기가 여기에 모여요."
+          />
         )}
       </div>
     </div>

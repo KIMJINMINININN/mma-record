@@ -68,4 +68,17 @@ describe('CalendarAgendaView', () => {
     // 날짜 그룹마다 추가 버튼(주 뷰 패리티) — 그룹 2개
     expect(screen.getAllByRole('button', { name: /추가/ })).toHaveLength(2);
   });
+
+  it('emptyTitle/emptyDescription override → 빈 상태 문구 대체 (cross-month 즐겨찾기 뷰용)', () => {
+    render(
+      <CalendarAgendaView
+        sessions={[]}
+        emptyTitle="즐겨찾기한 세션이 없습니다"
+        emptyDescription="세션 카드의 별표(★)를 누르면 전 기간 즐겨찾기가 여기에 모여요."
+      />,
+    );
+    expect(screen.getByText('즐겨찾기한 세션이 없습니다')).toBeInTheDocument();
+    // monthISO 생략이라도 안 깨지고(월 라벨 미사용), 기본 '{달}의 기록이 없습니다'는 나오지 않는다.
+    expect(screen.queryByText(/의 기록이 없습니다/)).not.toBeInTheDocument();
+  });
 });

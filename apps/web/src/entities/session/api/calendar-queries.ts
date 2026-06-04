@@ -115,3 +115,39 @@ export async function fetchRangeSessions(
     }),
   ) as SessionWithDisciplines[];
 }
+
+/** 즐겨찾기 cross-month 뷰의 안전 상한 — 즐겨찾기는 소수라는 전제, 초과 시 최신순 절단. */
+const FAVORITE_SESSIONS_LIMIT = 200;
+
+/**
+ * 즐겨찾기(`is_favorite=true`) 세션을 **전 기간** 조회 → `SessionWithDisciplines[]`
+ * (PRD §9 P1 / cross-month 즐겨찾기 뷰). `fetchRangeSessions`의 전기간 변형 — 날짜 범위(`gte/lte`)
+ * 대신 `.eq('is_favorite', true)`, 최신 우선(trained_on DESC → created_at DESC)으로 정렬한다.
+ * 동일 `SESSION_EMBED_SELECT`·평탄화(종목/태그/기술/미디어)를 공유한다. RLS로 본인 데이터만.
+ * 즐겨찾기는 소수라는 전제로 `FAVORITE_SESSIONS_LIMIT`(200) 안전장치 — 초과 시 최신순 절단(드묾).
+ * 호출부(CalendarScreen)가 `enabled: isAuthEnabled()`로 게이팅.
+ */
+export async function fetchFavoriteSessions(): Promise<SessionWithDisciplines[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('sessions')
+    .select(SESSION_EMBED_SELECT)
+    .eq('is_favorite', true)
+    .order('trained_on', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(FAVORITE_SESSIONS_LIMIT);
+  if (error) throw error;
+  return (data ?? []).map(
+    ({ session_disciplines, taggables, session_techniques, media_links, ...s }) => ({
+      ...s,
+      disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
+      tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+      techniques: (session_techniques ?? [])
+        .filter((st) => st.techniques != null)
+        .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
+      media: (media_links ?? [])
+        .map((ml) => ml.media_assets)
+        .filter((m): m is NonNullable<typeof m> => m != null),
+    }),
+  ) as SessionWithDisciplines[];
+}

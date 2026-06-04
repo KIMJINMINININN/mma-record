@@ -15,23 +15,32 @@ import { groupSessionsByDateDesc, krDateHeader } from '../lib/calendar-grouping'
  */
 
 export interface CalendarAgendaViewProps {
-  /** 표시 중인 달 'YYYY-MM'(빈 상태 안내 문구용). */
-  monthISO: string;
-  /** 표시 달 범위의 세션들(app이 fetchRangeSessions로 로드). */
+  /** 표시 중인 달 'YYYY-MM'(빈 상태 문구용). cross-month 컬렉션(즐겨찾기 등)이면 생략하고 empty* 로 대체. */
+  monthISO?: string;
+  /** 표시 달 범위(또는 cross-month)의 세션들(app이 fetchRangeSessions/fetchFavoriteSessions로 로드). */
   sessions: SessionWithDisciplines[];
+  /** 빈 상태 제목 override(기본: '{달}의 기록이 없습니다'). cross-month 뷰용. */
+  emptyTitle?: string;
+  /** 빈 상태 설명 override. */
+  emptyDescription?: string;
 }
 
-export function CalendarAgendaView({ monthISO, sessions }: CalendarAgendaViewProps) {
+export function CalendarAgendaView({
+  monthISO,
+  sessions,
+  emptyTitle,
+  emptyDescription,
+}: CalendarAgendaViewProps) {
   const groups = groupSessionsByDateDesc(sessions);
-  const monthLabel = dayjs(`${monthISO}-01`).format('M월');
 
   if (groups.length === 0) {
+    const monthLabel = monthISO ? dayjs(`${monthISO}-01`).format('M월') : '';
     return (
       <EmptyState
         className="rounded-m border border-dashed border-[var(--border-default)] bg-[var(--surface-base)]"
         icon={<PlusIcon width={32} height={32} />}
-        title={`${monthLabel}의 기록이 없습니다`}
-        description="이 달에 기록한 세션이 여기에 날짜순으로 모여요."
+        title={emptyTitle ?? `${monthLabel}의 기록이 없습니다`}
+        description={emptyDescription ?? '이 달에 기록한 세션이 여기에 날짜순으로 모여요.'}
       />
     );
   }
