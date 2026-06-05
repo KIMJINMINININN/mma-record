@@ -4,8 +4,8 @@
 > 포함: E-AUTH 인증 브릿지(9e19b5c) · 네이티브 촬영/갤러리(#1) · 오프라인 재시도 큐(#2) · HEIC→JPEG 정규화.
 > **DB 마이그레이션 추가 없음** — 이미지는 기존 `media_assets.kind='upload'` 수용(경로로 구분). db:push 불필요.
 
-## 1. 웹 (Vercel) — 사장님 확인
-- [ ] **Vercel 대시보드에서 빌드 성공 확인** (CLI 미설치 → 대시보드). 배포 커밋 `571ad7e`.
+## 1. 웹 (Vercel) — 빌드 ✅ 확인됨 (vercel MCP 조회, 2026-06-05)
+- [x] **프로덕션 빌드 성공** — `dpl_ELyPwMBVJbbRKXAUN5bMY7QtgS8Y` (commit `571ad7e`, target=production) **state=READY**. 현재 prod가 이 커밋. (직전 `6002e4f`에서 교체됨.)
 - [ ] prod 도메인 스모크: 로그인 → 캘린더/기술/검색 정상 로드(기존 기능 회귀 없음).
 - [ ] **웹 변경은 일반 브라우저에서 inert**라 회귀 위험 낮음:
   - WebViewMediaBridge: `window.ReactNativeWebView` 없으면 no-op.
