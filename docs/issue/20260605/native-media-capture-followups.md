@@ -13,10 +13,11 @@
 
 ## 보류 / 디바이스 검증 대기
 
-### 1. HEIC 사진(iOS 기본 포맷) 미지원 — ⚠ 제품 확인 필요
-- 현재 허용: `image/jpeg|png|webp`. iPhone 기본 촬영은 **HEIC** → `validatePicked`에서 거부("jpg·png·webp 사진만").
-- 옵션: (a) 네이티브에서 JPEG 재인코딩(expo-image-picker 옵션/별도 transcode), (b) 백엔드 HEIC 허용 + 서버 변환(웹 `<img>`는 HEIC 못 그림 → 변환 필수, 큼), (c) 현 제약 유지 + 사용자 안내.
-- **권장**: 디바이스에서 expo-image-picker가 실제 무엇을 반환하는지 먼저 확인(quality 옵션 시 JPEG 변환되는 기기 있음). 그 후 (a) 검토.
+### 1. HEIC 사진(iOS 기본 포맷) — ✅ 해결됨 (2026-06-05)
+- **`expo-image-manipulator ~14.0.8`로 픽한 이미지를 무조건 JPEG로 재인코딩**(media-capture `normalizeImageToJpeg`).
+  소스가 HEIC든 PNG든 항상 `image/jpeg`로 통일 → 웹 `<img>` 렌더·sign-upload(jpg/png/webp) 통과. 긴 변 >2048px면 리사이즈(용량 절감).
+- 결정론적 수정이라 실기기 확인 불필요(정답은 코드). 실기기는 UX 확인용으로만.
+- ↪ 잔여(LOW): 정규화 실패 시 원본 fallback(드물게 비-jpeg). expo-image-picker가 이미 jpeg를 줄 때 불필요한 재인코딩 1회(무해, 용량만 약간).
 
 ### 2. 서명 URL 토큰이 postMessage로 네이티브에 전달 — 보안 가정 문서화
 - `MEDIA_UPLOAD_TICKET.uploadUrl`에 Supabase 업로드 토큰(단명·PUT 전용·(user_id,path) 한정)이 포함.

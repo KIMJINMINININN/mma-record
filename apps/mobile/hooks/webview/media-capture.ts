@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { MediaMessage, WebviewMessageType } from '@the-others/webview-protocol';
 
 import { enqueueUpload } from './upload-queue';
@@ -66,6 +67,28 @@ function extFor(mime: string): string {
   }
 }
 
+/** 이미지 긴 변 상한 — 초과 시 리사이즈(용량 절감, 비율 보존). 사진은 보통 이걸로 충분. */
+const MAX_IMAGE_DIMENSION = 2048;
+
+/**
+ * 픽한 이미지를 무조건 JPEG로 정규화 — 소스가 HEIC(iPhone 기본)·PNG 등 무엇이든 jpeg로 통일한다.
+ * 웹 <img>가 못 그리는 HEIC 문제를 원천 차단(웹 sign-upload도 jpg/png/webp만 허용)하고, 큰 사진은
+ * 긴 변 2048px로 리사이즈해 업로드 용량을 줄인다. 실패 시 원본 uri 반환(드물게 비-jpeg일 수 있음).
+ */
+async function normalizeImageToJpeg(uri: string, width?: number): Promise<string> {
+  try {
+    const ctx = ImageManipulator.manipulate(uri);
+    if (typeof width === 'number' && width > MAX_IMAGE_DIMENSION) {
+      ctx.resize({ width: MAX_IMAGE_DIMENSION });
+    }
+    const ref = await ctx.renderAsync();
+    const out = await ref.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 });
+    return out.uri;
+  } catch {
+    return uri;
+  }
+}
+
 /** asset.mimeType 부재 시(특히 iOS .mov) 파일명 확장자로 mime 추론. */
 function mimeFromFileName(fileName: string | null | undefined, isImage: boolean): string {
   const ext = fileName?.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
@@ -128,24 +151,37 @@ export async function handlePickRequest(req: PickRequest, sendToWebview: SendToW
 
     const asset = result.assets[0];
     const isImage = asset.type === 'image';
-    const mime = asset.mimeType ?? mimeFromFileName(asset.fileName, isImage);
-    const fileName = asset.fileName ?? `capture.${extFor(mime)}`;
 
-    // 용량: picker가 안 주면 파일시스템에서 조회(fallback 0 → 웹 검증이 처리).
-    let sizeBytes = asset.fileSize ?? 0;
+    let fileUri = asset.uri;
+    let mime: string;
+    let fileName: string;
+    let durationSec: number | null;
+
+    if (isImage) {
+      // HEIC 등 어떤 소스든 JPEG로 정규화(웹 렌더/업로드 호환 보장).
+      fileUri = await normalizeImageToJpeg(asset.uri, asset.width);
+      mime = 'image/jpeg';
+      fileName = 'photo.jpg';
+      durationSec = null;
+    } else {
+      mime = asset.mimeType ?? mimeFromFileName(asset.fileName, false);
+      fileName = asset.fileName ?? `capture.${extFor(mime)}`;
+      // 영상 길이: picker는 ms로 준다 → 정수 초(웹 schema가 int 요구). 미상 → null.
+      durationSec = asset.duration != null ? Math.max(1, Math.round(asset.duration / 1000)) : null;
+    }
+
+    // 용량: 영상은 picker 값 우선, 이미지는 정규화된 파일을 파일시스템에서 실측(원본 크기 아님).
+    let sizeBytes = !isImage && asset.fileSize ? asset.fileSize : 0;
     if (!sizeBytes) {
       try {
-        const info = await FileSystem.getInfoAsync(asset.uri);
+        const info = await FileSystem.getInfoAsync(fileUri);
         if (info.exists && typeof info.size === 'number') sizeBytes = info.size;
       } catch {
         // 조회 실패 → 0 유지(웹/서버 검증이 거른다)
       }
     }
-    // 영상 길이: picker는 ms로 준다 → 정수 초(웹 schema가 int 요구). 이미지/미상 → null.
-    const durationSec =
-      !isImage && asset.duration != null ? Math.max(1, Math.round(asset.duration / 1000)) : null;
 
-    setPending(requestId, asset.uri, mime);
+    setPending(requestId, fileUri, mime);
     send(sendToWebview, {
       mode: 'MEDIA_PICKED',
       data: { requestId, fileName, mime, sizeBytes, durationSec, isImage },
