@@ -210,8 +210,8 @@ describe('타임아웃 레이스 — 고아 업로드 방지', () => {
       data: { requestId, fileName: 'c.mp4', mime: 'video/mp4', sizeBytes: 1024, durationSec: 5, isImage: false },
     });
 
-    // onPicked가 fetch를 await 중 — 5분 타임아웃 발동(cleanup + reject).
-    await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 1);
+    // onPicked가 fetch를 await 중 — 캡처 타임아웃(6분) 발동(cleanup + reject).
+    await vi.advanceTimersByTimeAsync(6 * 60 * 1000 + 1);
     // 늦게 도착한 fetch 응답: 가드(pending.has 체크)로 티켓을 보내면 안 된다(고아 업로드 방지).
     resolveFetch({
       ok: true,
@@ -221,6 +221,31 @@ describe('타임아웃 레이스 — 고아 업로드 방지', () => {
 
     expect(postedOfMode('MEDIA_UPLOAD_TICKET')).toBeUndefined();
     await expect(p).rejects.toMatchObject({ canceled: false });
+  });
+});
+
+describe('업로드 윈도우 재시작 — 픽 소요와 타임아웃 분리', () => {
+  it('픽이 5분 걸려도 티켓 핸드오프 후 윈도우 재시작 → 누적 10분 DONE도 resolve(고아 방지)', async () => {
+    vi.useFakeTimers();
+    const fetchMock = okFetch('u1/videos/x.mp4', 'https://sb.co/storage/v1/object/upload/sign/training-media/u1/videos/x.mp4?token=t');
+    vi.stubGlobal('fetch', fetchMock);
+
+    const p = requestNativeCapture('camera');
+    const requestId = requestIdOf();
+    // 사용자가 픽에 5분 소요(원래 6분 타임아웃 직전).
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    handleNativeMessage({
+      mode: 'MEDIA_PICKED',
+      data: { requestId, fileName: 'c.mp4', mime: 'video/mp4', sizeBytes: 1024, durationSec: 5, isImage: false },
+    });
+    // sign-upload 완료 → 티켓 송신 + 타임아웃 재시작.
+    await vi.advanceTimersByTimeAsync(10);
+    expect(postedOfMode('MEDIA_UPLOAD_TICKET')).toBeTruthy();
+
+    // 티켓 이후 추가 5분(누적 ~10분) — 원래 6분 타임아웃은 지났지만 재시작 윈도우는 유효해야 함.
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    handleNativeMessage({ mode: 'MEDIA_UPLOAD_DONE', data: { requestId } });
+    await expect(p).resolves.toMatchObject({ storagePath: 'u1/videos/x.mp4' });
   });
 });
 

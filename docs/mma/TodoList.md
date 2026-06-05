@@ -9,7 +9,7 @@
 
 ## 🟢 다음 시작점 (여기부터)
 
-> **⏩ 최신 (2026-06-05):** **E 트랙 #1 — 네이티브 촬영/갤러리 미디어 브릿지** 완료(feat 브랜치). 영상+사진, **DB 마이그 없음**(이미지=kind='upload', `videos/`↔`images/` 경로로 구분), **네이티브 직접 업로드(서명URL, 바이트 브릿지 미통과)**. 신규: `webview-protocol` MediaMessage · 웹 `WebViewMediaBridge`+`native-bridge` · 모바일 `media-capture`+`media-handlers`(expo-image-picker ~17.0.10). 게이트: web tsc·lint·**vitest 1122**·build green / mobile tsc·lint green. 적대적 리뷰 8확정 중 6수정(critical 타임아웃 레이스 포함). **보류·디바이스검증·할일 → `docs/issue/20260605/native-media-capture-followups.md`** (HEIC 미지원·토큰 postMessage·실기기 검증). E-AUTH와 함께 **main 미배포**.
+> **⏩ 최신 (2026-06-05):** **E 트랙 #1+#2 — 네이티브 촬영/갤러리 + 오프라인 재시도 큐** 완료(feat 브랜치). #1: 영상+사진, **DB 마이그 없음**(이미지=kind='upload', `videos/`↔`images/` 경로 구분), **네이티브 직접 업로드(서명URL, 바이트 브릿지 미통과)**. #2: `upload-queue`(PUT 실패→NetInfo 복귀/backoff 재시도, 파일 documentDirectory 복사) — 세션 내 재시도(Fork A), **교차 타임아웃 불변식 4분<6분<10분 + 티켓 핸드오프 시 웹 타임아웃 재시작**(픽 시간 분리, 고아 방지). 신규: `webview-protocol` MediaMessage · 웹 `WebViewMediaBridge`+`native-bridge` · 모바일 `media-capture`+`media-handlers`+`upload-queue`(expo-image-picker ~17.0.10). 게이트: web tsc·lint·**vitest 1123**·build green / mobile tsc·lint green. 적대적 리뷰 2회(8+6 확정→전부 수정/문서화). **보류·디바이스검증·할일 → `docs/issue/20260605/native-media-capture-followups.md`** (HEIC·토큰·실기기). E-AUTH와 함께 **main 미배포**.
 >
 > **⏪ 2026-06-04:** P1 고도화 대거 진행 — shadcn 어댑터 · A/B 컴포넌트 테스트 · 즐겨찾기 cross-month 뷰 · 🟢(터치타깃 44px · F5 외부링크 · calendar 스크린테스트 · QA 라벨) · **C F8 벨트 패싯(migration 0019)** · **E-AUTH 모바일 인증 브릿지**. **prod 마이그 0017/0018/0019 적용 + main 배포(C까지 `6002e4f`; E-AUTH `9e19b5c`는 feat 미배포)**. **이전 상세 → `docs/issue/20260604/next-session-handoff.md`**. ⚠ Vercel 빌드 확인 + prod §6 검증 + E-AUTH 실 CLIENT_URL은 사장님.
 

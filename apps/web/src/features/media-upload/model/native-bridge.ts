@@ -57,8 +57,12 @@ interface PendingCapture {
   storagePath?: string;
 }
 
-/** 캡처+업로드 타임아웃(ms) — 촬영 + 최대 100MB PUT까지 넉넉히 5분. */
-const CAPTURE_TIMEOUT_MS = 5 * 60 * 1000;
+/**
+ * 캡처+업로드 전체 타임아웃(ms) — 촬영 + sign-upload + 네이티브 PUT(오프라인 재시도 포함)까지.
+ * ⚠ 네이티브 재시도 예산(upload-queue TICKET_BUDGET_MS=4분)보다 **길어야** 한다 — 안 그러면 웹이 먼저
+ * reject한 뒤 네이티브가 늦게 DONE을 보내 고아 업로드가 된다. 6분 = 4분 예산 + 픽/서명 여유 2분.
+ */
+const CAPTURE_TIMEOUT_MS = 6 * 60 * 1000;
 
 /** 진행 중 캡처 레지스트리(requestId → pending). 모듈 스코프 = 메시지 페어 간 상태 유지. */
 const pending = new Map<string, PendingCapture>();
@@ -183,6 +187,14 @@ async function onPicked(d: Extract<MediaMessage, { mode: 'MEDIA_PICKED' }>['data
     // (안 그러면 네이티브가 업로드는 하지만 DONE 수신 시 entry가 없어 행이 안 생겨 고아 파일이 됨.)
     if (!pending.has(d.requestId)) return;
     entry.storagePath = path;
+    // ⚠ 업로드 윈도우 재시작 — 여기까지의 픽 소요는 타임아웃에 포함하지 않는다(픽은 사용자 주도라 길 수 있음).
+    // 티켓 핸드오프 시점부터 CAPTURE_TIMEOUT_MS를 새로 재서, 네이티브 재시도 예산(4분)보다 항상 길게 보장
+    // → 픽이 오래 걸려도 "웹이 먼저 타임아웃 후 네이티브가 늦게 DONE" 고아 레이스가 안 생긴다.
+    clearTimeout(entry.timer);
+    entry.timer = setTimeout(() => {
+      cleanup(d.requestId);
+      entry.reject({ canceled: false, message: '업로드 시간이 초과되었습니다. 다시 시도해 주세요.' });
+    }, CAPTURE_TIMEOUT_MS);
     // 네이티브가 로컬 파일을 이 절대 URL로 직접 PUT(content-type=mime). 토큰은 URL 쿼리에 포함됨.
     // 보안: signedUrl은 단명·PUT 전용·(user_id, path) 한정 토큰이지만, 네이티브측 로깅/크래시리포트가
     // postMessage 페이로드를 절대 캡처하지 않도록 해야 한다(Sentry 등 도입 시 필터링 필수). followup 참고.

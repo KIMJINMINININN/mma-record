@@ -38,6 +38,31 @@
 - 네이티브 업로드 영상 **첫프레임 썸네일** 미생성(`thumbnail_path=null`). `expo-video-thumbnails`로 생성 후 별도 티켓 업로드 검토.
 - 동시 캡처(촬영+갤러리 연타) 시 valueRef로 유실은 막았으나, 한 번에 하나 UX 가정.
 
+---
+
+# E 트랙 #2 — 오프라인 재시도 업로드 큐 (2026-06-05, 같은 세션 이어서)
+
+> 범위 **Fork A(세션 내 재시도)**. 네이티브 PUT이 네트워크로 실패하면 즉시 ERROR 대신
+> 큐에 넣고 NetInfo 복귀/backoff로 재시도. 캡처 파일은 documentDirectory로 복사(캐시 eviction 대비).
+> 신규 `apps/mobile/hooks/webview/upload-queue.ts`, `media-capture.handleUploadTicket`이 위임.
+
+## 이번 세션 수정 완료
+- 🔴 **교차 경계 타임아웃 불변식** — 픽 소요가 웹 타임아웃엔 포함되나 네이티브 예산엔 미포함 → 픽이 길면 고아 재발. **수정: 티켓 핸드오프 시점에 웹 `CAPTURE_TIMEOUT_MS`(6분) 재시작**(업로드 윈도우를 픽 시간과 분리). 네이티브 예산 `TICKET_BUDGET_MS`=4분 < 6분 < 서명URL TTL 10분. 회귀 테스트 추가(픽 5분+DONE 누적 10분도 resolve).
+- 🟠 `enqueueUpload` 중복 호출 가드(기존 복사본/타이머 정리) + 파일명에 nonce(충돌·지연 delete 레이스 차단).
+- 🟡 `attemptSoon` 타이머 정리를 inFlight 체크 **전에**(방어적 누수 차단).
+
+## 보류
+- **ACK 핸드셰이크(#5/#6)**: 네이티브가 티켓 수신 시 `MEDIA_TICKET_RECEIVED` 회신 → 웹이 정확한 업로드 시작 시각 기준으로 타임아웃 관리. 현재는 "티켓 송신 시 재시작 + 2분 마진"으로 완화(충분). 정밀 관측/엣지 강화가 필요하면 후속.
+- **고아 reconciliation(선택)**: 그래도 남는 극단 케이스(업로드 성공했는데 행 미생성) 대비, storage에 있으나 media_assets 행 없는 객체를 주기 청소하는 백그라운드 잡(P2).
+
+## 디바이스 검증 필수 (오프라인 큐)
+- NetInfo online 이벤트 → 실제 재시도 트리거.
+- `documentDirectory` 복사/삭제 수명(성공·실패·예산소진 모두 정리되는지).
+- 오프라인 지속 시 4분 예산 후 ERROR 안내가 웹에 정확히 도달(웹 6분 전).
+- 대용량(≤100MB) PUT가 backoff 재시도와 예산 내 완료되는지.
+
+---
+
 ## 검증/게이트 (2026-06-05)
 - web: tsc·lint·**vitest 1122**·build(AUTH-OFF static 14/14) green.
 - mobile: tsc·lint green(기존 webview-screen warning 2건 무관).

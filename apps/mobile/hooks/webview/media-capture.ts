@@ -2,6 +2,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import type { MediaMessage, WebviewMessageType } from '@the-others/webview-protocol';
 
+import { enqueueUpload } from './upload-queue';
+
 /**
  * media-capture — 네이티브 촬영/갤러리 + 서명URL 직접 업로드 구현 (E 트랙 / Develop §5).
  *
@@ -157,7 +159,10 @@ export async function handlePickRequest(req: PickRequest, sendToWebview: SendToW
   }
 }
 
-/** 웹의 MEDIA_UPLOAD_TICKET 처리 — 보관 중인 로컬 파일을 서명URL로 직접 PUT → DONE/ERROR. */
+/**
+ * 웹의 MEDIA_UPLOAD_TICKET 처리 — 보관 중인 로컬 파일을 upload-queue에 넘긴다.
+ * 큐가 서명URL 직접 PUT + 오프라인 재시도 + DONE/ERROR 회신을 책임진다(E 트랙 #2).
+ */
 export async function handleUploadTicket(ticket: UploadTicket, sendToWebview: SendToWebview): Promise<void> {
   const { requestId, uploadUrl, mime } = ticket;
   const pick = pendingPicks.get(requestId);
@@ -168,26 +173,7 @@ export async function handleUploadTicket(ticket: UploadTicket, sendToWebview: Se
     });
     return;
   }
-  try {
-    const res = await FileSystem.uploadAsync(uploadUrl, pick.fileUri, {
-      httpMethod: 'PUT',
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-      headers: { 'content-type': mime || pick.mime, 'x-upsert': 'false' },
-    });
-    if (res.status >= 200 && res.status < 300) {
-      send(sendToWebview, { mode: 'MEDIA_UPLOAD_DONE', data: { requestId } });
-    } else {
-      send(sendToWebview, {
-        mode: 'MEDIA_UPLOAD_ERROR',
-        data: { requestId, message: `업로드에 실패했습니다(${res.status}).` },
-      });
-    }
-  } catch {
-    send(sendToWebview, {
-      mode: 'MEDIA_UPLOAD_ERROR',
-      data: { requestId, message: '업로드 중 오류가 발생했습니다.' },
-    });
-  } finally {
-    deletePending(requestId);
-  }
+  // 픽 보관 해제(파일 경로는 큐로 이관 — 큐가 영속 복사/정리를 책임진다).
+  deletePending(requestId);
+  await enqueueUpload(requestId, uploadUrl, mime || pick.mime, pick.fileUri, sendToWebview);
 }
