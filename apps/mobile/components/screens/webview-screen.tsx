@@ -4,7 +4,6 @@ import {
   BackHandler,
   Linking,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -43,6 +42,9 @@ export default function WebViewScreen() {
       }
     }
     return true;
+    // webviewRef는 안정적 ref이고 아래에서 선언된다(useWebview↔onBackPress 순환 초기화 회피).
+    // 의도적으로 빈 deps 유지 — ref.current는 호출 시점(뒤로가기)에 최신을 읽는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { webviewRef, webviewUrl, sendToWebview, reloadWebview } = useWebview({

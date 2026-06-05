@@ -32,11 +32,11 @@
 - 카메라 영상 화질이 60s에 100MB 초과 가능 → 웹 검증이 거부. 필요 시 네이티브 압축.
 
 ### 4. LOW / nit (여유 시)
+- ✅ **프리뷰 썸네일 해결**(2026-06-05): MEDIA_PICKED에 작은 base64 썸네일(이미지 축소/영상 첫프레임 via expo-video-thumbnails) → picker 실프리뷰 + (영상) thumbs/ 업로드해 poster(`thumbnail_path`). `makePreviewBase64`/persist `base64ToBlob`.
+- ✅ **mobile webview-screen lint 경고 2건 해결**(Platform 미사용 제거 + handlePressBack useCallback eslint-disable 사유 명시) → mobile lint 완전 clean.
 - `WebViewMediaBridge` origin 검사 부재(현재 WebView 게이트 + 네이티브 originWhitelist로 안전, 주석화됨).
 - 모바일 `sizeBytes` fallback 0 — getInfoAsync 실패 시 0(웹/서버 검증이 거름). 명시 안내 검토.
 - `MEDIA_PICK_REQUEST` 모바일 핸들러 필드 검증을 `mediaTypes/limits`까지 확장.
-- 네이티브 캡처 미디어 **프리뷰 썸네일** 부재(picker 그리드는 "내 사진/영상" placeholder). 작은 base64 썸네일을 MEDIA_PICKED에 실어 프리뷰(브릿지 부담 작음) — UX 개선.
-- 네이티브 업로드 영상 **첫프레임 썸네일** 미생성(`thumbnail_path=null`). `expo-video-thumbnails`로 생성 후 별도 티켓 업로드 검토.
 - 동시 캡처(촬영+갤러리 연타) 시 valueRef로 유실은 막았으나, 한 번에 하나 UX 가정.
 
 ---

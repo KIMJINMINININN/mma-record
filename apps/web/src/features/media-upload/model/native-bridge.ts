@@ -53,6 +53,8 @@ interface PendingCapture {
   sizeBytes: number;
   durationSec: number | null;
   isImage: boolean;
+  /** 네이티브 프리뷰 썸네일(JPEG base64). picker 프리뷰 + (영상) poster 업로드용. */
+  previewBase64?: string;
   /** sign-upload가 돌려준 storage path — DONE 수신 시 행 생성에 사용. */
   storagePath?: string;
 }
@@ -155,6 +157,7 @@ async function onPicked(d: Extract<MediaMessage, { mode: 'MEDIA_PICKED' }>['data
   entry.sizeBytes = d.sizeBytes;
   entry.durationSec = d.durationSec;
   entry.isImage = d.isImage;
+  entry.previewBase64 = d.previewBase64;
 
   const invalid = validatePicked(d);
   if (invalid) {
@@ -220,6 +223,7 @@ function onUploadDone(requestId: string): void {
     durationSec: entry.durationSec,
     isImage: entry.isImage,
     fileName: entry.fileName,
+    previewBase64: entry.previewBase64 ?? null,
   });
 }
 

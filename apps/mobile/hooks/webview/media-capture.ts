@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { MediaMessage, WebviewMessageType } from '@the-others/webview-protocol';
 
@@ -86,6 +87,26 @@ async function normalizeImageToJpeg(uri: string, width?: number): Promise<string
     return out.uri;
   } catch {
     return uri;
+  }
+}
+
+/** 프리뷰 썸네일 긴 변(px) — 작게(브릿지 base64 부담 최소). */
+const PREVIEW_DIMENSION = 240;
+
+/**
+ * 작은 프리뷰 썸네일을 JPEG base64로 생성한다(웹 picker 즉시 프리뷰 + 영상 poster용).
+ * 이미지=소스 축소, 영상=첫프레임(expo-video-thumbnails) 축소. 실패 시 undefined(선택 필드).
+ */
+async function makePreviewBase64(sourceUri: string, isImage: boolean): Promise<string | undefined> {
+  try {
+    const imageUri = isImage
+      ? sourceUri
+      : (await VideoThumbnails.getThumbnailAsync(sourceUri, { time: 0 })).uri;
+    const ref = await ImageManipulator.manipulate(imageUri).resize({ width: PREVIEW_DIMENSION }).renderAsync();
+    const out = await ref.saveAsync({ format: SaveFormat.JPEG, compress: 0.4, base64: true });
+    return out.base64;
+  } catch {
+    return undefined;
   }
 }
 
@@ -181,10 +202,13 @@ export async function handlePickRequest(req: PickRequest, sendToWebview: SendToW
       }
     }
 
+    // 프리뷰 썸네일(이미지=축소 jpeg, 영상=첫프레임) — 웹 즉시 프리뷰 + 영상 poster.
+    const previewBase64 = await makePreviewBase64(isImage ? fileUri : asset.uri, isImage);
+
     setPending(requestId, fileUri, mime);
     send(sendToWebview, {
       mode: 'MEDIA_PICKED',
-      data: { requestId, fileName, mime, sizeBytes, durationSec, isImage },
+      data: { requestId, fileName, mime, sizeBytes, durationSec, isImage, previewBase64 },
     });
   } catch {
     deletePending(requestId);

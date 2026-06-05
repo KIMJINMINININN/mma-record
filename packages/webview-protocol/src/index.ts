@@ -53,6 +53,11 @@ export type MediaMessage =
         /** 영상 길이(정수 초). 이미지/길이 미상 → null. */
         durationSec: number | null;
         isImage: boolean;
+        /**
+         * 작은 프리뷰 썸네일(JPEG base64, ~240px). 이미지=축소본, 영상=첫프레임.
+         * 용도: 웹 picker 즉시 프리뷰 + (영상) thumbs/ 업로드해 poster. 작아서 브릿지 부담 미미(수~십 KB).
+         */
+        previewBase64?: string;
       };
     }
   | { mode: 'MEDIA_PICK_CANCELED'; data: { requestId: string } }

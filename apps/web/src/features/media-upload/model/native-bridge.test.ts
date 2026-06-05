@@ -89,7 +89,22 @@ describe('requestNativeCapture — happy path', () => {
       durationSec: 30,
       isImage: false,
       fileName: 'clip.mp4',
+      previewBase64: null, // 이 케이스는 MEDIA_PICKED에 프리뷰 미포함 → null
     });
+  });
+
+  it('MEDIA_PICKED previewBase64 → draft.previewBase64로 전달', async () => {
+    const fetchMock = okFetch('u1/videos/p.mp4', 'https://sb.co/storage/v1/object/upload/sign/training-media/u1/videos/p.mp4?token=t');
+    vi.stubGlobal('fetch', fetchMock);
+    const p = requestNativeCapture('camera');
+    const requestId = requestIdOf();
+    handleNativeMessage({
+      mode: 'MEDIA_PICKED',
+      data: { requestId, fileName: 'p.mp4', mime: 'video/mp4', sizeBytes: 2048, durationSec: 12, isImage: false, previewBase64: 'AAAA' },
+    });
+    await vi.waitFor(() => expect(postedOfMode('MEDIA_UPLOAD_TICKET')).toBeTruthy());
+    handleNativeMessage({ mode: 'MEDIA_UPLOAD_DONE', data: { requestId } });
+    await expect(p).resolves.toMatchObject({ previewBase64: 'AAAA', storagePath: 'u1/videos/p.mp4' });
   });
 
   it('사진: sign-upload kind=image, duration 미포함', async () => {

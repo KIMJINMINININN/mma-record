@@ -32,6 +32,8 @@ export type MediaDraft =
       /** 이미지면 true(영상이면 false) — picker 그리드 라벨/표시 분기용. */
       isImage: boolean;
       fileName: string;
+      /** 네이티브가 보낸 프리뷰 썸네일(JPEG base64, ~240px). picker 프리뷰 + (영상) poster 업로드용. 없으면 null. */
+      previewBase64: string | null;
     };
 
 /** 업로드 한도 — env로 노출(클라이언트 사전검증). 기본 100MiB / 60초 / mp4·mov (Develop §5.3). */

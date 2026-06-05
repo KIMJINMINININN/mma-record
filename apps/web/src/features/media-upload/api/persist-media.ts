@@ -20,6 +20,14 @@ import { createMediaAssets } from './media-asset-actions';
 
 const BUCKET = process.env.NEXT_PUBLIC_MEDIA_BUCKET ?? 'training-media';
 
+/** base64(JPEG 등) → Blob (브라우저). 네이티브가 보낸 프리뷰 썸네일을 thumbs/에 업로드할 때 사용. */
+function base64ToBlob(base64: string, mime: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
 export async function persistMediaDrafts(drafts: MediaDraft[]): Promise<string[]> {
   if (drafts.length === 0) return [];
 
@@ -42,10 +50,28 @@ export async function persistMediaDrafts(drafts: MediaDraft[]): Promise<string[]
     }
 
     if (draft.kind === 'native-upload') {
-      // 네이티브(촬영/갤러리)가 이미 서명URL로 업로드를 끝낸 자산 — sign-upload/PUT 없이 행만 만든다.
+      // 네이티브(촬영/갤러리)가 이미 서명URL로 업로드를 끝낸 자산 — 본체는 sign-upload/PUT 없이 행만 만든다.
       // 영상/이미지 공통 kind='upload'(이미지는 storage_path가 images/ 세그먼트라 표시에서 구분).
-      // 썸네일: 영상 첫프레임은 브라우저 File이 없어 캡처 불가(현재 null, expo-video-thumbnails 후속);
-      // 이미지는 원본 자체가 썸네일이라 표시에서 storage_path를 직접 서명해 쓴다.
+      // 영상 poster: 네이티브가 보낸 첫프레임 프리뷰(base64)를 thumbs/에 업로드해 thumbnail_path로(F5/AC5).
+      //   이미지는 원본 자체가 표시물이라 썸네일 불필요(표시는 storage_path를 직접 서명).
+      let thumbnailPath: string | null = null;
+      if (!draft.isImage && draft.previewBase64) {
+        try {
+          const thumbBlob = base64ToBlob(draft.previewBase64, 'image/jpeg');
+          const tRes = await fetch('/api/media/sign-upload', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ filename: 'thumb.jpg', size: thumbBlob.size, mime: 'image/jpeg', kind: 'thumbnail' }),
+          });
+          if (tRes.ok) {
+            const { path: tPath, token: tToken } = (await tRes.json()) as { path: string; token: string };
+            const { error: tErr } = await supabase.storage.from(BUCKET).uploadToSignedUrl(tPath, tToken, thumbBlob);
+            if (!tErr) thumbnailPath = tPath;
+          }
+        } catch {
+          // 썸네일 실패는 무시 — 영상 자체 표시(<video> 첫프레임)에는 영향 없음.
+        }
+      }
       inputs.push({
         kind: 'upload',
         storage_path: draft.storagePath,
@@ -54,7 +80,7 @@ export async function persistMediaDrafts(drafts: MediaDraft[]): Promise<string[]
         // 이미지는 길이 개념이 없다 — 불변식을 앱 레이어에서 강제(네이티브가 null을 보내야 하지만 방어).
         duration_sec: draft.isImage ? null : draft.durationSec,
         size_bytes: draft.sizeBytes,
-        thumbnail_path: null,
+        thumbnail_path: thumbnailPath,
         title: draft.fileName,
       });
       continue;

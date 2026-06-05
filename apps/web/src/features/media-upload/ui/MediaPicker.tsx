@@ -382,9 +382,10 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
                 ) : draft.kind === 'external' ? (
                   <MediaThumb kind="external" />
                 ) : draft.kind === 'native-upload' ? (
-                  // 네이티브 업로드 — 로컬 프리뷰 없음(바이트가 브릿지를 안 거침). 사진/영상 placeholder.
+                  // 네이티브 업로드 — 네이티브가 보낸 작은 base64 프리뷰가 있으면 표시, 없으면 placeholder.
                   <MediaThumb
                     kind="upload"
+                    thumbnailUrl={draft.previewBase64 ? `data:image/jpeg;base64,${draft.previewBase64}` : null}
                     durationSec={draft.isImage ? null : draft.durationSec}
                     uploadLabel={draft.isImage ? '내 사진' : '내 영상'}
                   />
