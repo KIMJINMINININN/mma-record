@@ -5,22 +5,24 @@ type EnvConfig = {
   API_BASE_URL: string;
 };
 
-// MMA 웹앱(apps/web, Next.js)을 WebView로 로드한다.
-// 아래 per-env URL은 인프라 단계(Vercel 프로비저닝)에서 실제 도메인으로 교체된다.
-// 그 전까지는 EXPO_PUBLIC_CLIENT_URL 오버라이드로 로컬 dev 서버를 가리킨다.
+// MMA 웹앱(apps/web, Next.js)을 WebView로 로드한다. CLIENT_URL = 실 Vercel prod 도메인.
+// 별도 dev/beta 배포가 없어 세 환경 모두 prod를 가리킨다(단일 배포). 로컬 개발은
+// EXPO_PUBLIC_CLIENT_URL 오버라이드로 로컬 Next dev 서버를 가리킨다.
 // 예: EXPO_PUBLIC_CLIENT_URL=http://192.168.0.10:3000 pnpm --filter @the-others/mobile start
+// API_BASE_URL은 네이티브 직접 API 호출(후속) 예약 슬롯 — 현재 WebView 로드엔 미사용(Supabase가 백엔드).
+const PROD_CLIENT_URL = 'https://mma-record-web.vercel.app';
 const envConfigs: Record<Environment, EnvConfig> = {
   develop: {
-    CLIENT_URL: 'https://dev.example.com', // TODO(인프라): MMA 웹앱 개발 Vercel 도메인으로 교체
-    API_BASE_URL: 'https://dev-api.example.com', // TODO(인프라): MMA 개발 API 도메인으로 교체
+    CLIENT_URL: PROD_CLIENT_URL, // 로컬은 EXPO_PUBLIC_CLIENT_URL 오버라이드 사용
+    API_BASE_URL: PROD_CLIENT_URL,
   },
   beta: {
-    CLIENT_URL: 'https://beta.example.com', // TODO(인프라): MMA 웹앱 베타 Vercel 도메인으로 교체
-    API_BASE_URL: 'https://beta-api.example.com', // TODO(인프라): MMA 베타 API 도메인으로 교체
+    CLIENT_URL: PROD_CLIENT_URL,
+    API_BASE_URL: PROD_CLIENT_URL,
   },
   production: {
-    CLIENT_URL: 'https://example.com', // TODO(인프라): MMA 웹앱 운영 Vercel 도메인으로 교체
-    API_BASE_URL: 'https://api.example.com', // TODO(인프라): MMA 운영 API 도메인으로 교체
+    CLIENT_URL: PROD_CLIENT_URL,
+    API_BASE_URL: PROD_CLIENT_URL,
   },
 };
 
