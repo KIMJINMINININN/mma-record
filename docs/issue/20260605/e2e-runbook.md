@@ -3,12 +3,19 @@
 > 하니스는 **이미 완성**이고 현재 UI 대비 **셀렉터 감사 통과**(드리프트 0). 전용 테스트 계정만 있으면 바로 실행된다.
 > 파일: `apps/web/playwright.config.ts` · `apps/web/e2e/auth.setup.ts`(로그인→storageState) · `apps/web/e2e/smoke.spec.ts`.
 
-## 감사 결과 (2026-06-05) — 전부 현재 UI와 일치, 수정 불필요
+## ✅ prod 검증 완료 (2026-06-05) — 3/3 통과
+실제 prod(`https://mma-record-web.vercel.app`) 대상으로 `pnpm web e2e` 실행 → **3 passed**
+(setup 로그인 → 인증 세션 활성 → 세션 생성→캘린더 반영). 핵심 쓰기 루프(log_session RPC) 동작 확인.
+
+**런타임이 잡은 셀렉터 드리프트 1건 수정**: `getByRole('button',{name:'세션 추가'})`가 FAB 외
+day-detail·뷰탭 버튼과 동명이 되어 strict 위반(3 매칭) → FAB만 가진 `button[aria-label="세션 추가"]`로 한정(`smoke.spec.ts`). 정적 grep 감사가 놓친 것을 실행이 잡음.
+
+## 감사 결과 (2026-06-05) — 나머지 셀렉터는 현재 UI와 일치
 - 로그인: `label="이메일"`·`label="비밀번호"`·버튼 `로그인` (login-form.tsx) ✅
-- FAB: `aria-label="세션 추가"` (QuickAddFab) ✅
 - 다이얼로그: `role="dialog"` (SessionEditorHost) ✅
 - 종목: `주짓수 (기)` (discipline-meta bjj_gi) + aria-pressed ✅
 - 세션 폼: `세부 정보 (선택)` 토글 · `메모`/`se-memo` · `저장` 버튼 · `저장됨` 토스트 ✅
+- ⚠️ 테스트 계정: `kjm9596+matlogqa2@gmail.com`(gmail 별칭, prod). 자격은 `apps/web/.env.test`(gitignore).
 
 ## 실행 순서
 1. **전용 테스트 계정 생성** (⚠ prod에 실데이터[세션]를 씀, 자동 정리 없음 → 반드시 일회용/전용 계정).

@@ -22,9 +22,9 @@ test('authenticated session is active', async ({ page }) => {
   // /login 으로 리다이렉트되지 않아야 한다
   await expect(page).not.toHaveURL(/\/login/);
 
-  // QuickAddFab 이 보이면 (app) 레이아웃이 인증 상태로 렌더된 것
-  // aria-label="세션 추가" — QuickAddFab.tsx L26
-  await expect(page.getByRole('button', { name: '세션 추가' })).toBeVisible();
+  // QuickAddFab 이 보이면 (app) 레이아웃이 인증 상태로 렌더된 것.
+  // "세션 추가" 접근명은 이제 여러 버튼(FAB·day-detail·뷰탭)이 공유 → FAB만 가진 aria-label 속성으로 한정.
+  await expect(page.locator('button[aria-label="세션 추가"]')).toBeVisible();
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,8 +37,8 @@ test('create a session and see it in the calendar', async ({ page }) => {
   await page.goto('/calendar');
 
   // ── 1. FAB 클릭 → 세션 에디터(바텀시트/모달) 열기 ──
-  // QuickAddFab: aria-label="세션 추가" (QuickAddFab.tsx L26)
-  await page.getByRole('button', { name: '세션 추가' }).click();
+  // FAB만 aria-label="세션 추가" 속성 보유(day-detail·뷰탭 버튼은 텍스트로 동명 → 속성으로 한정).
+  await page.locator('button[aria-label="세션 추가"]').click();
 
   // 다이얼로그가 열렸는지 확인 — SessionEditorHost: role=dialog (SessionEditorHost.tsx L107)
   const dialog = page.getByRole('dialog');
