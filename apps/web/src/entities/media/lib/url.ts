@@ -15,6 +15,15 @@ export function safeExternalUrl(raw: string | null | undefined): string | null {
   }
 }
 
+/**
+ * 업로드 자산(kind='upload')의 storage_path가 사진인가 — `images/` 세그먼트로 판별 (E 트랙).
+ * 영상은 `videos/`, 사진은 `images/` 경로로 발급되므로 별도 mime 컬럼 없이 표시에서 구분한다
+ * (sign-upload 라우트가 경로를 강제 — `<user_id>/{videos|images}/<uuid>.<ext>`).
+ */
+export function isImageStoragePath(path: string | null | undefined): boolean {
+  return !!path && path.includes('/images/');
+}
+
 /** 표시용 호스트(없으면 null). */
 export function urlHost(raw: string): string | null {
   try {

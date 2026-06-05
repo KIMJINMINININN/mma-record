@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { domainAvatar, safeExternalUrl, urlHost } from './url';
+import { domainAvatar, isImageStoragePath, safeExternalUrl, urlHost } from './url';
 
 describe('safeExternalUrl', () => {
   it('https 허용(정규화)', () => expect(safeExternalUrl('https://ex.com/a')).toBe('https://ex.com/a'));
@@ -17,6 +17,18 @@ describe('safeExternalUrl', () => {
 describe('urlHost', () => {
   it('호스트 추출', () => expect(urlHost('https://www.ex.com/a?b=1')).toBe('www.ex.com'));
   it('비-URL → null', () => expect(urlHost('nope')).toBeNull());
+});
+
+describe('isImageStoragePath', () => {
+  it('images/ 세그먼트 → true', () =>
+    expect(isImageStoragePath('u1/images/abc.jpg')).toBe(true));
+  it('videos/ 세그먼트 → false', () =>
+    expect(isImageStoragePath('u1/videos/abc.mp4')).toBe(false));
+  it('null/undefined/빈 → false', () => {
+    expect(isImageStoragePath(null)).toBe(false);
+    expect(isImageStoragePath(undefined)).toBe(false);
+    expect(isImageStoragePath('')).toBe(false);
+  });
 });
 
 describe('domainAvatar', () => {

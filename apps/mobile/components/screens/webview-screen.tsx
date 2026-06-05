@@ -16,6 +16,7 @@ import { WebViewErrorEvent } from 'react-native-webview/lib/WebViewTypes';
 import useWebview from '@/hooks/webview/use-webview';
 import { useWebviewMessage } from '@/hooks/webview/use-webview-message';
 import { saveSession, clearSession, updateRefreshToken } from '@/hooks/webview/auth-storage';
+import { handlePickRequest, handleUploadTicket } from '@/hooks/webview/media-capture';
 import { ENV } from '@/config/env';
 
 export default function WebViewScreen() {
@@ -56,6 +57,11 @@ export default function WebViewScreen() {
       onLogin: saveSession,
       onLogout: clearSession,
       onTokenRefresh: ({ refreshToken }) => updateRefreshToken(refreshToken),
+    },
+    // 미디어 캡처(E 트랙) → 촬영/갤러리 + 서명URL 직접 PUT. 결과는 sendToWebview로 회신.
+    media: {
+      onPickRequest: (req) => handlePickRequest(req, sendToWebview),
+      onUploadTicket: (ticket) => handleUploadTicket(ticket, sendToWebview),
     },
   });
 

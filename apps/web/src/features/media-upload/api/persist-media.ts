@@ -41,6 +41,25 @@ export async function persistMediaDrafts(drafts: MediaDraft[]): Promise<string[]
       continue;
     }
 
+    if (draft.kind === 'native-upload') {
+      // 네이티브(촬영/갤러리)가 이미 서명URL로 업로드를 끝낸 자산 — sign-upload/PUT 없이 행만 만든다.
+      // 영상/이미지 공통 kind='upload'(이미지는 storage_path가 images/ 세그먼트라 표시에서 구분).
+      // 썸네일: 영상 첫프레임은 브라우저 File이 없어 캡처 불가(현재 null, expo-video-thumbnails 후속);
+      // 이미지는 원본 자체가 썸네일이라 표시에서 storage_path를 직접 서명해 쓴다.
+      inputs.push({
+        kind: 'upload',
+        storage_path: draft.storagePath,
+        youtube_video_id: null,
+        external_url: null,
+        // 이미지는 길이 개념이 없다 — 불변식을 앱 레이어에서 강제(네이티브가 null을 보내야 하지만 방어).
+        duration_sec: draft.isImage ? null : draft.durationSec,
+        size_bytes: draft.sizeBytes,
+        thumbnail_path: null,
+        title: draft.fileName,
+      });
+      continue;
+    }
+
     if (draft.kind === 'external') {
       // 메타 행만(업로드 없음). external_url은 picker에서 이미 http(s) 안전화됨.
       inputs.push({

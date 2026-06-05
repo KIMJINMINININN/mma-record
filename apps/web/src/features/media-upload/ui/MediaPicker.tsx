@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
+
+import type { MediaSource } from '@the-others/webview-protocol';
 
 import { MediaThumb, parseYoutubeVideoId, safeExternalUrl } from '@/entities/media';
 import { Button, HIT_AREA_44_BEFORE } from '@/shared/ui';
@@ -12,6 +14,11 @@ import {
   validateUploadFileSync,
   type MediaDraft,
 } from '../model/media-draft';
+import {
+  isNativeBridgeAvailable,
+  requestNativeCapture,
+  type NativeCaptureRejection,
+} from '../model/native-bridge';
 
 /**
  * MediaPicker — 세션/기술에 붙일 미디어 초안 수집기 (F5 / Design §7c 미디어 행 · §9.2).
@@ -40,6 +47,11 @@ export interface MediaPickerProps {
 
 const DEFAULT_MAX = 8;
 const ACCEPT = ALLOWED_UPLOAD_MIME.join(',');
+
+// 네이티브 브릿지 가용성은 세션 내 불변(window.ReactNativeWebView 유무) → 구독은 no-op.
+// useSyncExternalStore로 SSR(서버 스냅샷=false)→클라(실측) 전환을 hydration-safe하게 처리.
+const subscribeNative = () => () => {};
+const getServerNativeSnapshot = () => false;
 
 /**
  * 선택 파일의 재생 길이(정수 초)를 <video> 메타데이터에서 비동기로 읽는다.
@@ -72,11 +84,24 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
   const [linkInput, setLinkInput] = useState('');
   const [linkError, setLinkError] = useState<string | null>(null);
   const [overLimit, setOverLimit] = useState<string | null>(null);
+  // 네이티브 앱 WebView 안이면 촬영/갤러리 버튼 노출(브라우저 파일 입력 대신).
+  const nativeAvailable = useSyncExternalStore(
+    subscribeNative,
+    isNativeBridgeAvailable,
+    getServerNativeSnapshot,
+  );
 
   const linkInputId = useId();
   const linkErrId = useId();
   const linkInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 비동기 추가(파일 길이 probe / 네이티브 캡처) 후 onChange가 구식 value 클로저를 덮어쓰지 않도록,
+  // 최신 커밋된 value를 ref로 추적해 append 기준으로 쓴다(대기 중 다른 미디어 추가분 유실 방지).
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   // ── object-URL 누수 방지: 직전 렌더의 upload previewUrl 집합과 비교해 사라진 것만 revoke ──
   const prevUrlsRef = useRef<Set<string>>(new Set());
@@ -176,7 +201,7 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
     }
 
     onChange([
-      ...value,
+      ...valueRef.current,
       {
         kind: 'upload',
         file,
@@ -189,6 +214,22 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
     // TODO(infra): 저장 시 sign-upload→PUT→media_assets→media_id.
   }
 
+  // ── 네이티브 촬영/갤러리 → 서명URL 직접 업로드 → native-upload 초안(E 트랙) ──
+  async function handleNativeCapture(source: MediaSource) {
+    if (atMax) {
+      toast.error(`미디어는 최대 ${max}개까지 추가할 수 있습니다.`);
+      return;
+    }
+    try {
+      const draft = await requestNativeCapture(source);
+      onChange([...valueRef.current, draft]);
+    } catch (reason) {
+      const r = reason as NativeCaptureRejection;
+      // 사용자가 picker를 닫은 것(canceled)은 조용히 무시, 실패만 안내.
+      if (!r?.canceled) toast.error(r?.message ?? '미디어 첨부에 실패했습니다.');
+    }
+  }
+
   function handleRemove(index: number) {
     onChange(value.filter((_, i) => i !== index));
   }
@@ -197,26 +238,51 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
     <div className="flex flex-col gap-3">
       {/* ── 추가 컨트롤 행: 파일 / 유튜브 링크 ── */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-        {/* 파일(촬영/업로드) — Button 모양 label로 파일 입력 트리거 */}
-        <div className="shrink-0">
-          <input
-            ref={fileInputRef}
-            id="media-file-input"
-            type="file"
-            accept={ACCEPT}
-            onChange={handleFileSelect}
-            disabled={atMax}
-            className="sr-only"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={atMax}
-            onClick={() => fileInputRef.current?.click()}
-            title={atMax ? `최대 ${max}개` : '촬영/업로드'}
-          >
-            📹 파일
-          </Button>
+        {/* 미디어 추가 진입점 — 네이티브 앱이면 촬영/갤러리(네이티브 직접 업로드), 브라우저면 파일 입력 */}
+        <div className="flex shrink-0 gap-2">
+          {nativeAvailable ? (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={atMax}
+                onClick={() => handleNativeCapture('camera')}
+                title={atMax ? `최대 ${max}개` : '촬영(카메라)'}
+              >
+                📷 촬영
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={atMax}
+                onClick={() => handleNativeCapture('library')}
+                title={atMax ? `최대 ${max}개` : '갤러리에서 선택'}
+              >
+                🖼 갤러리
+              </Button>
+            </>
+          ) : (
+            <>
+              <input
+                ref={fileInputRef}
+                id="media-file-input"
+                type="file"
+                accept={ACCEPT}
+                onChange={handleFileSelect}
+                disabled={atMax}
+                className="sr-only"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={atMax}
+                onClick={() => fileInputRef.current?.click()}
+                title={atMax ? `최대 ${max}개` : '촬영/업로드'}
+              >
+                📹 파일
+              </Button>
+            </>
+          )}
         </div>
 
         {/* 유튜브 링크 입력 + 추가 */}
@@ -304,7 +370,9 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
                   ? `yt-${draft.videoId}`
                   : draft.kind === 'external'
                     ? `ex-${draft.url}`
-                    : `up-${draft.previewUrl}`
+                    : draft.kind === 'native-upload'
+                      ? `nu-${draft.storagePath}`
+                      : `up-${draft.previewUrl}`
               }
               className="flex flex-col gap-1"
             >
@@ -313,6 +381,13 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
                   <MediaThumb kind="youtube" youtubeVideoId={draft.videoId} />
                 ) : draft.kind === 'external' ? (
                   <MediaThumb kind="external" />
+                ) : draft.kind === 'native-upload' ? (
+                  // 네이티브 업로드 — 로컬 프리뷰 없음(바이트가 브릿지를 안 거침). 사진/영상 placeholder.
+                  <MediaThumb
+                    kind="upload"
+                    durationSec={draft.isImage ? null : draft.durationSec}
+                    uploadLabel={draft.isImage ? '내 사진' : '내 영상'}
+                  />
                 ) : (
                   <MediaThumb
                     kind="upload"
@@ -333,6 +408,12 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
               </div>
               {draft.kind === 'upload' && (
                 <span className="text-body-xs-400 text-[var(--text-muted)]">업로드는 인프라 후 저장</span>
+              )}
+              {draft.kind === 'native-upload' && (
+                <span className="text-body-xs-400 text-[var(--text-muted)]">
+                  <span aria-hidden="true">✓ </span>
+                  업로드 완료
+                </span>
               )}
             </li>
           ))}

@@ -8,6 +8,9 @@ import {
   UPLOAD_MAX_BYTES,
   UPLOAD_MAX_DURATION_SEC,
   ALLOWED_UPLOAD_MIME,
+  ALLOWED_IMAGE_MIME,
+  isImageMime,
+  isUploadVideoMime,
 } from '@/features/media-upload/model/media-draft';
 
 // ---------------------------------------------------------------------------
@@ -139,6 +142,32 @@ describe('validateUploadFileSync', () => {
 // ---------------------------------------------------------------------------
 // validateDuration
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// isImageMime / isUploadVideoMime (네이티브 촬영/갤러리 분기, E 트랙)
+// ---------------------------------------------------------------------------
+
+describe('isImageMime / isUploadVideoMime', () => {
+  it('허용 이미지 형식(jpeg/png/webp) → isImageMime true', () => {
+    for (const m of ALLOWED_IMAGE_MIME) expect(isImageMime(m)).toBe(true);
+  });
+  it('영상/미허용 형식 → isImageMime false', () => {
+    expect(isImageMime('video/mp4')).toBe(false);
+    expect(isImageMime('image/heic')).toBe(false);
+    expect(isImageMime('')).toBe(false);
+  });
+  it('허용 영상 형식(mp4/mov) → isUploadVideoMime true', () => {
+    for (const m of ALLOWED_UPLOAD_MIME) expect(isUploadVideoMime(m)).toBe(true);
+  });
+  it('이미지/미허용 형식 → isUploadVideoMime false', () => {
+    expect(isUploadVideoMime('image/jpeg')).toBe(false);
+    expect(isUploadVideoMime('video/webm')).toBe(false);
+  });
+  it('이미지/영상 집합은 서로소', () => {
+    for (const m of ALLOWED_IMAGE_MIME) expect(isUploadVideoMime(m)).toBe(false);
+    for (const m of ALLOWED_UPLOAD_MIME) expect(isImageMime(m)).toBe(false);
+  });
+});
 
 describe('validateDuration', () => {
   it('returns null for 0 seconds', () => {

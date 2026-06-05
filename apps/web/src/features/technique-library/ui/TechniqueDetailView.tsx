@@ -15,7 +15,7 @@ import { DisciplineChip, usesBelt } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
 import { CLASS_TYPE_LABELS, type SessionWithDisciplines } from '@/entities/session';
 import { fetchTechniqueTagNames, TagChip } from '@/entities/tag';
-import { fetchTechniqueMedia, YoutubeFacade, UploadVideo, ExternalLinkCard } from '@/entities/media';
+import { fetchTechniqueMedia, YoutubeFacade, UploadMedia, ExternalLinkCard } from '@/entities/media';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import {
   Callout,
@@ -184,7 +184,7 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
                     title={m.title ?? undefined}
                   />
                 ) : m.kind === 'upload' && m.storage_path ? (
-                  <UploadVideo key={m.id} storagePath={m.storage_path} thumbnailPath={m.thumbnail_path} />
+                  <UploadMedia key={m.id} storagePath={m.storage_path} thumbnailPath={m.thumbnail_path} />
                 ) : m.kind === 'external' && m.external_url ? (
                   <ExternalLinkCard key={m.id} url={m.external_url} title={m.title} />
                 ) : null,

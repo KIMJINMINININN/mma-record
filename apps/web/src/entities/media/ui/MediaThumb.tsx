@@ -26,6 +26,8 @@ export interface MediaThumbProps {
   thumbnailUrl?: string | null;
   /** 업로드 길이(초) — 있으면 우하단 길이 배지. */
   durationSec?: number | null;
+  /** kind='upload' 썸네일 부재 시 placeholder 라벨. 기본 '내 영상'(사진이면 '내 사진' 등). */
+  uploadLabel?: string;
   /** kind='external'일 때 호스트(도메인 아바타·라벨용). 없으면 🔗 placeholder. */
   host?: string | null;
   alt?: string;
@@ -71,6 +73,7 @@ export function MediaThumb({
   youtubeVideoId = null,
   thumbnailUrl = null,
   durationSec = null,
+  uploadLabel = '내 영상',
   host = null,
   alt,
   className,
@@ -112,7 +115,7 @@ export function MediaThumb({
             className="h-full w-full object-cover"
           />
         ) : (
-          <PlaceholderBody label="내 영상" />
+          <PlaceholderBody label={uploadLabel} />
         )}
         {durationSec != null && (
           <span className="absolute bottom-1.5 right-1.5 rounded-xxs bg-black/70 px-1.5 py-0.5 text-button-xs text-white tabular-nums">

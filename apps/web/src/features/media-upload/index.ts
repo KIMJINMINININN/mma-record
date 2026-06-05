@@ -4,6 +4,8 @@
  * widgets(session-editor)는 이 배럴만 import 한다(feature→widget 딥임포트 금지).
  */
 export * from './ui/MediaPicker';
+export * from './ui/WebViewMediaBridge';
 export * from './model/media-draft';
+export * from './model/native-bridge';
 export * from './api/persist-media';
 export * from './api/media-asset-actions';

@@ -9,7 +9,9 @@
 
 ## 🟢 다음 시작점 (여기부터)
 
-> **⏩ 최신 (2026-06-04):** P1 고도화 대거 진행 — shadcn 어댑터 · A/B 컴포넌트 테스트 · 즐겨찾기 cross-month 뷰 · 🟢(터치타깃 44px · F5 외부링크 · calendar 스크린테스트 · QA 라벨) · **C F8 벨트 패싯(migration 0019)** · **E-AUTH 모바일 인증 브릿지**. **prod 마이그 0017/0018/0019 적용 + main 배포(C까지 `6002e4f`; E-AUTH `9e19b5c`는 feat 미배포)**. web vitest 1095 green. **다음 시작점·할 일·고도화 백로그·배포검증 미완은 전부 → `docs/issue/20260604/next-session-handoff.md`**. ⚠ Vercel 빌드 확인 + prod §6 검증 + E-AUTH 실 CLIENT_URL은 사장님.
+> **⏩ 최신 (2026-06-05):** **E 트랙 #1 — 네이티브 촬영/갤러리 미디어 브릿지** 완료(feat 브랜치). 영상+사진, **DB 마이그 없음**(이미지=kind='upload', `videos/`↔`images/` 경로로 구분), **네이티브 직접 업로드(서명URL, 바이트 브릿지 미통과)**. 신규: `webview-protocol` MediaMessage · 웹 `WebViewMediaBridge`+`native-bridge` · 모바일 `media-capture`+`media-handlers`(expo-image-picker ~17.0.10). 게이트: web tsc·lint·**vitest 1122**·build green / mobile tsc·lint green. 적대적 리뷰 8확정 중 6수정(critical 타임아웃 레이스 포함). **보류·디바이스검증·할일 → `docs/issue/20260605/native-media-capture-followups.md`** (HEIC 미지원·토큰 postMessage·실기기 검증). E-AUTH와 함께 **main 미배포**.
+>
+> **⏪ 2026-06-04:** P1 고도화 대거 진행 — shadcn 어댑터 · A/B 컴포넌트 테스트 · 즐겨찾기 cross-month 뷰 · 🟢(터치타깃 44px · F5 외부링크 · calendar 스크린테스트 · QA 라벨) · **C F8 벨트 패싯(migration 0019)** · **E-AUTH 모바일 인증 브릿지**. **prod 마이그 0017/0018/0019 적용 + main 배포(C까지 `6002e4f`; E-AUTH `9e19b5c`는 feat 미배포)**. **이전 상세 → `docs/issue/20260604/next-session-handoff.md`**. ⚠ Vercel 빌드 확인 + prod §6 검증 + E-AUTH 실 CLIENT_URL은 사장님.
 
 **어디까지 왔나 (2026-06-02 PM):** 🚀 **프로덕션 라이브.** Vercel 배포 완료(Root Directory=`apps/web`) · 실 Supabase 연결 · 회원가입/로그인 동작 확인. P0 기능 전부 라이브 + **테스트 인프라 구축(826 통과)**. 게이트 전부 green(typecheck·lint·build·vitest·gitleaks). 마지막 push = `e0112f3`. 배포 절차/트러블슈팅 상세 = `docs/mma/VERCEL_DEPLOY.md`.
 

@@ -6,5 +6,6 @@ export * from './ui/YoutubeFacade';
 export * from './ui/MediaThumb';
 export * from './ui/VideoPlayer';
 export * from './ui/UploadVideo';
+export * from './ui/UploadMedia';
 export * from './ui/ExternalLinkCard';
 export * from './api/media-queries';

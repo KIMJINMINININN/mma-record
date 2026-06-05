@@ -2,7 +2,7 @@ import { MarkdownView } from '@/shared/ui';
 import { SessionFavoriteStar } from '@/features/session-favorite';
 import { DisciplineChip } from '@/entities/discipline';
 import { TagChip } from '@/entities/tag';
-import { YoutubeFacade, UploadVideo, ExternalLinkCard } from '@/entities/media';
+import { YoutubeFacade, UploadMedia, ExternalLinkCard } from '@/entities/media';
 import {
   CLASS_TYPE_LABELS,
   intensityDots,
@@ -144,7 +144,7 @@ export function SessionCard({ session }: SessionCardProps) {
                     title={m.title ?? undefined}
                   />
                 ) : m.kind === 'upload' && m.storage_path ? (
-                  <UploadVideo key={m.id} storagePath={m.storage_path} thumbnailPath={m.thumbnail_path} />
+                  <UploadMedia key={m.id} storagePath={m.storage_path} thumbnailPath={m.thumbnail_path} />
                 ) : m.kind === 'external' && m.external_url ? (
                   <ExternalLinkCard key={m.id} url={m.external_url} title={m.title} />
                 ) : null,
