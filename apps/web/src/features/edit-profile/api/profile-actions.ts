@@ -4,7 +4,12 @@ import { revalidatePath } from 'next/cache';
 
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
-import { profileUpdateSchema, type ProfileUpdate } from '@/entities/profile';
+import {
+  profileUpdateSchema,
+  reminderUpdateSchema,
+  type ProfileUpdate,
+  type ReminderUpdate,
+} from '@/entities/profile';
 import { userRankUpsertSchema, type UserRankUpsert } from '@/entities/rank';
 
 /**
@@ -23,6 +28,8 @@ const PROFILE_DISABLED_MESSAGE =
   '프로필 저장은 인프라 연결(NEXT_PUBLIC_AUTH_ENABLED) 후 활성화됩니다.';
 const RANK_DISABLED_MESSAGE =
   '랭크 저장은 인프라 연결(NEXT_PUBLIC_AUTH_ENABLED) 후 활성화됩니다.';
+const REMINDER_DISABLED_MESSAGE =
+  '리마인더 저장은 인프라 연결(NEXT_PUBLIC_AUTH_ENABLED) 후 활성화됩니다.';
 
 /**
  * 표시명 + 타임존 저장 (F1-AC3) → `profiles` update.
@@ -55,6 +62,49 @@ export async function updateProfile(rawInput: ProfileUpdate): Promise<EditResult
 
   revalidatePath('/profile');
   return { ok: true };
+}
+
+/**
+ * 훈련 리마인더 설정 저장 (로컬 알림 MVP / 0023_reminder.sql) → `profiles` update.
+ * reminder_* 3컬럼만 건드리며, RLS가 본인 행만 허용한다. days는 스키마가 중복 제거·정렬한다.
+ *
+ * updateProfile과 동일한 도먼시 패턴(플래그 OFF면 네트워크 없이 안내만 반환).
+ * 성공 시 정규화된 값을 함께 돌려준다 — 클라이언트가 그 값을 그대로 네이티브(WebView)로
+ * 재전송(REMINDER_SCHEDULE)해 DB·디바이스 스케줄을 일치시킨다(낙관 갱신 없이 정확한 페이로드 보장).
+ */
+export async function updateReminder(
+  rawInput: ReminderUpdate,
+): Promise<EditResult & { reminder?: ReminderUpdate }> {
+  const parsed = reminderUpdateSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? '입력값을 확인하세요.' };
+  }
+  const input = parsed.data;
+
+  if (!isAuthEnabled()) {
+    return { ok: false, dormant: true, error: REMINDER_DISABLED_MESSAGE };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth.user;
+  if (!user) return { ok: false, error: '로그인이 필요합니다.' };
+
+  // db:types 생성(인프라) 후 실타입 — profiles Update가 reminder_* 컬럼을 안다.
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      reminder_enabled: input.reminder_enabled,
+      reminder_days: input.reminder_days,
+      reminder_time: input.reminder_time,
+    })
+    .eq('user_id', user.id);
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidatePath('/profile');
+  return { ok: true, reminder: input };
 }
 
 /**

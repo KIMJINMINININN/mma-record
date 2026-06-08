@@ -49,6 +49,12 @@
           "cameraPermission": "MatLog이 훈련 영상을 촬영할 수 있도록 카메라 접근을 허용해 주세요.",
           "microphonePermission": "MatLog이 훈련 영상을 녹화할 수 있도록 마이크 접근을 허용해 주세요."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#E11D48"
+        }
       ]
     ],
     "experiments": {

@@ -4,5 +4,5 @@
  * app/(app)/profile 페이지가 ProfileRankEditor를 조합한다.
  */
 export { ProfileRankEditor, type ProfileRankEditorProps } from './ui/ProfileRankEditor';
-export { updateProfile, upsertRank, type EditResult } from './api/profile-actions';
+export { updateProfile, updateReminder, upsertRank, type EditResult } from './api/profile-actions';
 export { TIMEZONES, DEFAULT_TIMEZONE, type TimezoneOption } from './model/timezones';

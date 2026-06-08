@@ -6,14 +6,16 @@ import { systemHandlers } from './handlers/system-handlers';
 import { createAuthHandlers } from './handlers/auth-handlers';
 import { createCommonHandlers } from './handlers/common-handlers';
 import { createMediaHandlers } from './handlers/media-handlers';
+import { createReminderHandlers } from './handlers/reminder-handlers';
 
 export function useWebviewMessage(ctx: HandlerContext) {
-  // Compose dispatch table: common → auth → media → system (system wins on key conflict)
+  // Compose dispatch table: common → auth → media → reminder → system (system wins on key conflict)
   const allHandlers = useMemo(
     () => ({
       ...createCommonHandlers(ctx),
       ...createAuthHandlers(ctx),
       ...createMediaHandlers(ctx),
+      ...createReminderHandlers(ctx),
       ...systemHandlers, // raw object — keys are legacy strings like 'App Launch'
     }),
     [ctx],

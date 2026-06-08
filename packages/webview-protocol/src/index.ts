@@ -74,3 +74,27 @@ export const MEDIA_MESSAGE_MODES = [
   'MEDIA_UPLOAD_DONE',
   'MEDIA_UPLOAD_ERROR',
 ] as const;
+
+/**
+ * 훈련 리마인더 도메인 메시지 (웹 → 네이티브, 로컬 알림 MVP / 0023_reminder.sql).
+ *
+ * 방향: 웹앱(WebView)이 자기 리마인더 설정(profiles.reminder_*)을 **네이티브로 단방향 push**한다.
+ *   · 로그인 후 프로필 로드 시(현재 상태 동기화) + 설정 저장 시(변경 반영) 두 시점에 보낸다.
+ * 네이티브(apps/mobile)는 이 값을 받아 expo-notifications로 요일/시간 반복 **로컬 알림**을 스케줄한다
+ *   (서버 푸시 아님 — 토큰/발송 인프라 불필요, 디바이스가 직접 스케줄).
+ *
+ * 페이로드:
+ *   enabled — 리마인더 on/off. false면 네이티브는 기존 스케줄을 모두 취소만 한다.
+ *   days    — 알림 요일(0=일 ~ 6=토, JS getDay()/dayjs day() 컨벤션). 비면 알림 없음.
+ *             ⚠ expo-notifications weekday는 1=일 ~ 7=토라 네이티브가 +1 변환한다(여기선 0~6 유지).
+ *   time    — 'HH:MM'(24h, 디바이스 로컬 시간). 네이티브가 hour/minute로 파싱.
+ *
+ * auth/media와 달리 요청-응답이 없는 fire-and-forget이다(네이티브 스케줄 결과를 웹은 추적하지 않음).
+ */
+export type ReminderMessage = {
+  mode: 'REMINDER_SCHEDULE';
+  data: { enabled: boolean; days: number[]; time: string };
+};
+
+/** ReminderMessage.mode 전체 집합 — 런타임 라우팅(네이티브 핸들러 등록)용. */
+export const REMINDER_MESSAGE_MODES = ['REMINDER_SCHEDULE'] as const;

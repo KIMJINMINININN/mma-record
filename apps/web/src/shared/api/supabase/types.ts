@@ -134,6 +134,9 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string
+          reminder_days: number[]
+          reminder_enabled: boolean
+          reminder_time: string
           timezone: string
           updated_at: string
           user_id: string
@@ -142,6 +145,9 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string
+          reminder_days?: number[]
+          reminder_enabled?: boolean
+          reminder_time?: string
           timezone?: string
           updated_at?: string
           user_id: string
@@ -150,6 +156,9 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string
+          reminder_days?: number[]
+          reminder_enabled?: boolean
+          reminder_time?: string
           timezone?: string
           updated_at?: string
           user_id?: string

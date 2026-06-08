@@ -5,10 +5,11 @@ import { toast } from 'sonner';
 
 import { BeltBadge, BELT_META } from '@/entities/rank';
 import type { UserRankUpsert } from '@/entities/rank';
-import type { ProfileUpdate } from '@/entities/profile';
+import type { ProfileUpdate, ReminderUpdate } from '@/entities/profile';
+import { emitReminderChanged } from '@/features/webview-reminder';
 import { BELTS, RANK_TRACKS, type Belt, type RankTrack } from '@/shared/model/enums';
 import { Button } from '@/shared/ui';
-import { updateProfile, upsertRank, type EditResult } from '../api/profile-actions';
+import { updateProfile, updateReminder, upsertRank, type EditResult } from '../api/profile-actions';
 import { TIMEZONES, DEFAULT_TIMEZONE } from '../model/timezones';
 
 /**
@@ -94,6 +95,9 @@ const LEVEL_OPTIONS: readonly { value: string; label: string }[] = [
 /** stripes 선택지 (0~4). */
 const STRIPE_OPTIONS = [0, 1, 2, 3, 4] as const;
 
+/** 요일 토글 라벨 — 인덱스 0=일 ~ 6=토 (reminder_days 컨벤션과 동일). */
+const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+
 /** action 결과 → 토스트 (도먼시는 가짜 성공 금지: info로 솔직히 안내). */
 function notify(res: EditResult) {
   if (res.ok) {
@@ -110,12 +114,20 @@ export interface ProfileRankEditorProps {
   initialProfile: ProfileUpdate;
   /** 트랙별 랭크 초기값 (인프라 전: {} — 미설정). */
   initialRanks: Partial<Record<RankTrack, UserRankUpsert>>;
+  /** 리마인더 설정 초기값 (인프라 전: { reminder_enabled:false, reminder_days:[], reminder_time:'19:00' }). */
+  initialReminder: ReminderUpdate;
 }
 
-export function ProfileRankEditor({ initialProfile, initialRanks }: ProfileRankEditorProps) {
+export function ProfileRankEditor({
+  initialProfile,
+  initialRanks,
+  initialReminder,
+}: ProfileRankEditorProps) {
   return (
     <div className="flex flex-col gap-5">
       <AccountInfoSection initial={initialProfile} />
+
+      <ReminderSection initial={initialReminder} />
 
       <div className="flex flex-col gap-2">
         <h2 className="text-heading-xs text-[var(--text-strong)]">종목별 랭크</h2>
@@ -175,6 +187,125 @@ function AccountInfoSection({ initial }: { initial: ProfileUpdate }) {
               </option>
             ))}
           </select>
+        </Field>
+
+        <div>
+          <Button variant="primary" size="md" disabled={pending} onClick={handleSave}>
+            {pending ? '저장 중…' : '저장'}
+          </Button>
+        </div>
+      </div>
+    </CardSection>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 훈련 리마인더 (로컬 알림 MVP / 0023_reminder.sql) — on/off + 요일(일~토) + 시각
+ *   저장은 인프라 전까지 도먼시(updateProfile과 동일 env 게이팅). 저장 성공 시
+ *   emitReminderChanged로 네이티브(WebView) 브리지에 알려 디바이스 알림 스케줄을 갱신한다.
+ * ────────────────────────────────────────────────────────────────────────── */
+function ReminderSection({ initial }: { initial: ReminderUpdate }) {
+  const [enabled, setEnabled] = useState(initial.reminder_enabled);
+  const [days, setDays] = useState<number[]>(initial.reminder_days);
+  const [time, setTime] = useState(initial.reminder_time);
+  const [pending, startTransition] = useTransition();
+
+  function toggleDay(day: number) {
+    setDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort((a, b) => a - b),
+    );
+  }
+
+  function handleSave() {
+    startTransition(async () => {
+      const res = await updateReminder({
+        reminder_enabled: enabled,
+        reminder_days: days,
+        reminder_time: time,
+      });
+      notify(res);
+      // 저장 성공 시에만 네이티브로 재전송(서버가 정규화한 페이로드 우선 — 도먼시면 보내지 않음).
+      if (res.ok && res.reminder) {
+        emitReminderChanged({
+          enabled: res.reminder.reminder_enabled,
+          days: res.reminder.reminder_days,
+          time: res.reminder.reminder_time,
+        });
+      }
+    });
+  }
+
+  return (
+    <CardSection
+      title="훈련 리마인더"
+      description="설정한 요일·시각에 앱이 훈련 알림을 보냅니다(디바이스 알림)."
+    >
+      <div className="flex flex-col gap-4">
+        {/* on/off 토글 */}
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-body-s-500 text-[var(--text-default)]">리마인더 사용</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            aria-label="리마인더 사용"
+            onClick={() => setEnabled((v) => !v)}
+            className={[
+              'relative h-6 w-11 shrink-0 rounded-full',
+              'transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+              'outline-none focus-visible:shadow-[var(--ring-focus)]',
+              enabled ? 'bg-[var(--primary)]' : 'bg-[var(--border-strong)]',
+            ].join(' ')}
+          >
+            <span
+              className={[
+                'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--surface-base)]',
+                'transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+                enabled ? 'translate-x-5' : 'translate-x-0',
+              ].join(' ')}
+            />
+          </button>
+        </div>
+
+        {/* 요일 토글 (일~토) — off면 흐리게 + 비활성 */}
+        <Field label="알림 요일" htmlFor="reminder-days">
+          <div id="reminder-days" className="flex flex-wrap gap-2" role="group" aria-label="알림 요일">
+            {WEEKDAY_LABELS.map((label, day) => {
+              const active = days.includes(day);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={!enabled}
+                  onClick={() => toggleDay(day)}
+                  className={[
+                    'h-9 w-9 rounded-xs text-body-s-500',
+                    'border transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+                    'outline-none focus-visible:shadow-[var(--ring-focus)]',
+                    'disabled:cursor-not-allowed disabled:opacity-50',
+                    active
+                      ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--text-on-primary)]'
+                      : 'border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)]',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+
+        {/* 알림 시각 */}
+        <Field label="알림 시각" htmlFor="reminder-time">
+          <input
+            id="reminder-time"
+            type="time"
+            value={time}
+            disabled={!enabled}
+            onChange={(e) => setTime(e.target.value)}
+            className={`h-10 w-40 ${FIELD_BASE}`}
+          />
         </Field>
 
         <div>

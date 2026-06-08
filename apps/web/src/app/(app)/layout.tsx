@@ -5,6 +5,8 @@ import { AppShell } from '@/widgets/app-shell';
 import { SessionEditorHost } from '@/widgets/session-editor';
 import { WebViewAuthBridge } from '@/features/webview-auth';
 import { WebViewMediaBridge } from '@/features/media-upload';
+import { WebViewReminderBridge } from '@/features/webview-reminder';
+import { loadReminderForBridge } from '@/features/webview-reminder/api/load-reminder';
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 
@@ -30,12 +32,17 @@ export default async function AppGroupLayout({ children }: { children: ReactNode
     if (!data.user) redirect('/login');
   }
 
+  // 리마인더 진입 동기화 — 현재 설정을 WebView 브리지 initial로 내려준다(앱 안에서만 네이티브로 push).
+  // 도먼시(플래그 OFF)면 Supabase 무접촉으로 휴면 기본값 반환(정적 프리렌더 유지).
+  const initialReminder = await loadReminderForBridge();
+
   return (
     <>
       <AppShell>{children}</AppShell>
       <SessionEditorHost />
       <WebViewAuthBridge />
       <WebViewMediaBridge />
+      <WebViewReminderBridge initial={initialReminder} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { Button } from '@/shared/ui';
 import { ProfileRankEditor } from '@/features/edit-profile';
-import type { ProfileUpdate } from '@/entities/profile';
+import type { ProfileUpdate, ReminderUpdate } from '@/entities/profile';
 import type { UserRankUpsert } from '@/entities/rank';
 import type { RankTrack } from '@/shared/model/enums';
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
@@ -19,6 +19,12 @@ import { logout } from '@/app/(auth)/actions';
 
 /** 인프라 전 도먼시 기본값 — 가짜 데이터 금지(빈 표시명 / 서울 타임존). */
 const DORMANT_PROFILE: ProfileUpdate = { display_name: '', timezone: 'Asia/Seoul' };
+/** 리마인더 도먼시 기본값 — 0023_reminder.sql 컬럼 default와 동일(off / 요일 없음 / 저녁 7시). */
+const DORMANT_REMINDER: ReminderUpdate = {
+  reminder_enabled: false,
+  reminder_days: [],
+  reminder_time: '19:00',
+};
 
 export default async function ProfilePage() {
   let email: string | null = null;
@@ -26,6 +32,7 @@ export default async function ProfilePage() {
   // 인프라 전(플래그 OFF)·행 부재 시 도먼시 기본 유지 — 가짜 데이터 금지.
   let initialProfile: ProfileUpdate = DORMANT_PROFILE;
   let initialRanks: Partial<Record<RankTrack, UserRankUpsert>> = {};
+  let initialReminder: ReminderUpdate = DORMANT_REMINDER;
 
   if (isAuthEnabled()) {
     const supabase = await createSupabaseServerClient();
@@ -39,7 +46,7 @@ export default async function ProfilePage() {
       const [{ data: profile }, { data: rankRows }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, timezone')
+          .select('display_name, timezone, reminder_enabled, reminder_days, reminder_time')
           .eq('user_id', userId)
           .maybeSingle(),
         supabase
@@ -50,6 +57,11 @@ export default async function ProfilePage() {
 
       if (profile) {
         initialProfile = { display_name: profile.display_name, timezone: profile.timezone };
+        initialReminder = {
+          reminder_enabled: profile.reminder_enabled,
+          reminder_days: profile.reminder_days,
+          reminder_time: profile.reminder_time,
+        };
       }
       if (rankRows) {
         const byTrack: Partial<Record<RankTrack, UserRankUpsert>> = {};
@@ -101,8 +113,12 @@ export default async function ProfilePage() {
         </form>
       </div>
 
-      {/* 표시명/타임존 + 종목별 랭크 편집 (클라이언트 섬) — 저장은 도먼시(env 게이팅) */}
-      <ProfileRankEditor initialProfile={initialProfile} initialRanks={initialRanks} />
+      {/* 표시명/타임존 + 리마인더 + 종목별 랭크 편집 (클라이언트 섬) — 저장은 도먼시(env 게이팅) */}
+      <ProfileRankEditor
+        initialProfile={initialProfile}
+        initialRanks={initialRanks}
+        initialReminder={initialReminder}
+      />
     </section>
   );
 }
