@@ -57,3 +57,4 @@ apps/*/android
 # Claude Code / claude-mem artifacts
 .omc/
 **/CLAUDE.md
+.gstack/
