@@ -4,7 +4,8 @@ import type { Metadata } from 'next';
 import { ShareView } from './share-view';
 
 /**
- * 공유 공개 페이지 `/share/[token]` (F11 / 0022_shares.sql).
+ * 공유 공개 페이지 `/share/[token]` (F11 / 0022_shares.sql · 0024_share_technique.sql).
+ * 세션·기술 어느 쪽이든 받아 렌더한다(봉투 RPC get_shared_resource → ShareView 가 type 으로 분기).
  *
  * **(app) 그룹 밖**이라 (app)/layout의 인증 가드(getUser 리다이렉트)가 없다 → 로그인 없이 열린다.
  * 익명 노출 페이지라 검색 인덱싱은 막는다(robots noindex). params는 Next 16에서 Promise이므로 await.
@@ -15,7 +16,7 @@ import { ShareView } from './share-view';
  */
 
 export const metadata: Metadata = {
-  title: '공유된 훈련 기록 · MatLog',
+  title: '공유 · MatLog',
   // 익명 공개 링크 — 토큰 URL이 검색에 노출되지 않도록 인덱싱 차단.
   robots: { index: false, follow: false },
 };

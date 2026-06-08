@@ -504,7 +504,15 @@ export type Database = {
       }
     }
     Functions: {
+      get_shared_resource: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       get_shared_session: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      get_shared_technique: {
         Args: { p_token: string }
         Returns: Json
       }

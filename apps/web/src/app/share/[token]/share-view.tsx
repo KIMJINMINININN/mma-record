@@ -3,28 +3,40 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
-import { DisciplineChip } from '@/entities/discipline';
+import { DisciplineChip, usesBelt } from '@/entities/discipline';
+import { BeltBadge } from '@/entities/rank';
+import { CategoryChip, LevelChip, PositionChip } from '@/entities/technique';
 import { TagChip } from '@/entities/tag';
 import { YoutubeFacade, ExternalLinkCard } from '@/entities/media';
 import { CLASS_TYPE_LABELS, intensityDots } from '@/entities/session';
 import { krDateHeader } from '@/widgets/day-detail/lib/calendar-grouping';
-import { EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
-import type { Discipline, ClassType } from '@/shared/model/enums';
+import { Callout, EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
+import type {
+  Belt,
+  ClassType,
+  Discipline,
+  Level,
+  PositionKind,
+  TechniqueCategory,
+} from '@/shared/model/enums';
 
 /**
- * ShareView — 공유 토큰으로 받은 세션을 익명 읽기 전용으로 렌더 (F11 / 0022_shares.sql).
+ * ShareView — 공유 토큰으로 받은 자원(세션 OR 기술)을 익명 읽기 전용으로 렌더
+ * (F11 / 0022_shares.sql · 0024_share_technique.sql).
  *
- * (app) 그룹 밖이라 인증 가드가 없다 → 브라우저 Supabase 클라이언트로 `get_shared_session(p_token)`
- * RPC(security definer, anon grant)를 호출한다. RPC가 합성 jsonb를 돌려주며, RLS 우회는 토큰 보유자 +
- * 이 함수 범위로만 한정된다(업로드 영상은 anon 서명URL 불가라 youtube/external 미디어만 포함).
+ * (app) 그룹 밖이라 인증 가드가 없다 → 브라우저 Supabase 클라이언트로 `get_shared_resource(p_token)`
+ * 봉투 RPC(security definer, anon grant)를 호출한다. RPC가 `{type, data}` 합성 jsonb를 돌려주며,
+ * type('session'|'technique')으로 분기해 각 카드를 렌더한다. RLS 우회는 토큰 보유자 + 함수 범위로만
+ * 한정된다(업로드 미디어는 anon 서명URL 불가라 youtube/external 미디어만 포함).
  *
- * SessionWithDisciplines(id/is_favorite 보유)와 형태가 다르므로(jsonb, id 없음) SessionCard를 재사용하지
- * 않고 전용 읽기 뷰로 작성한다 — 카드 스타일(토큰·--shadow-card)만 참고. null/빈 반환이면 "존재하지 않거나
- * 만료된 공유" 안내를 보여준다(토큰 추측/만료/삭제 모두 동일 처리 — 자원 존재 여부를 누설하지 않음).
+ * SessionWithDisciplines / Technique(id/is_favorite 보유)와 형태가 다르므로(jsonb, id 없음) 기존
+ * 카드를 재사용하지 않고 전용 읽기 뷰로 작성한다 — 카드 스타일(토큰·--shadow-card)만 참고. null/빈
+ * 반환이면 "존재하지 않거나 만료된 공유" 안내를 보여준다(토큰 추측/만료/삭제 모두 동일 처리 — 자원
+ * 존재 여부를 누설하지 않음).
  */
 
-/** RPC가 돌려주는 세션 jsonb 형태(읽기 전용). get_shared_session의 jsonb_build_object와 1:1. */
-interface SharedTechnique {
+/** RPC가 돌려주는 세션 내 기술 항목 jsonb 형태(읽기 전용). get_shared_session의 techniques 항목과 1:1. */
+interface SharedSessionTechnique {
   name: string;
   discipline: Discipline;
   day_memo_md: string | null;
@@ -45,10 +57,31 @@ interface SharedSession {
   partners: string | null;
   memo_md: string | null;
   disciplines: Discipline[];
-  techniques: SharedTechnique[];
+  techniques: SharedSessionTechnique[];
   tags: string[];
   media: SharedMedia[];
 }
+
+/** RPC가 돌려주는 기술 jsonb 형태(읽기 전용). get_shared_technique의 jsonb_build_object와 1:1. */
+interface SharedTechniqueResource {
+  name: string;
+  discipline: Discipline;
+  category: TechniqueCategory;
+  position: PositionKind | null;
+  striking_style: string | null;
+  belt: Belt | null;
+  belt_stripes: number | null;
+  level: Level | null;
+  description_md: string | null;
+  details_md: string | null;
+  tags: string[];
+  media: SharedMedia[];
+}
+
+/** 봉투 RPC 반환 — type 으로 분기. data 가 null 이면(자원 없음) 전체를 null 로 취급. */
+type SharedResource =
+  | { type: 'session'; data: SharedSession }
+  | { type: 'technique'; data: SharedTechniqueResource };
 
 /** 강도 5단계 점(●●●○○) — SessionCard와 동일 표현(표시 전용). */
 function IntensityDots({ intensity }: { intensity: number | null }) {
@@ -78,16 +111,18 @@ function SectionLabel({ children }: { children: string }) {
   return <p className="text-button-xs text-[var(--text-muted)]">{children}</p>;
 }
 
-/** 공유 데이터를 가져오는 쿼리 훅 — 토큰별 캐시. RPC가 null이면 빈 공유로 취급. */
-function useSharedSession(token: string) {
-  return useQuery<SharedSession | null>({
-    queryKey: ['share', 'session', token],
+/** 공유 데이터를 가져오는 쿼리 훅 — 토큰별 캐시. 봉투 RPC가 null이거나 data가 null이면 빈 공유로 취급. */
+function useSharedResource(token: string) {
+  return useQuery<SharedResource | null>({
+    queryKey: ['share', 'resource', token],
     queryFn: async () => {
       const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.rpc('get_shared_session', { p_token: token });
+      const { data, error } = await supabase.rpc('get_shared_resource', { p_token: token });
       if (error) throw new Error(error.message);
-      // RPC는 매칭 없으면 0행 → data=null. 합성 객체면 그대로 narrow.
-      return (data as SharedSession | null) ?? null;
+      // RPC는 매칭 없으면 0행 → data=null. 봉투의 data(자원 본체)도 null이면 빈 공유로 취급.
+      const envelope = (data as SharedResource | null) ?? null;
+      if (!envelope || !envelope.data) return null;
+      return envelope;
     },
     retry: false,
     staleTime: 5 * 60_000,
@@ -95,12 +130,12 @@ function useSharedSession(token: string) {
 }
 
 export function ShareView({ token }: { token: string }) {
-  const { data: session, isLoading, isError } = useSharedSession(token);
+  const { data: result, isLoading, isError } = useSharedResource(token);
 
   if (isLoading) return <ShareViewSkeleton />;
 
   // 오류(네트워크/RPC 실패)거나 매칭 없음(null) → 동일 안내(자원 존재 여부 누설 방지).
-  if (isError || !session) {
+  if (isError || !result) {
     return (
       <EmptyState
         title="존재하지 않거나 만료된 공유예요"
@@ -109,6 +144,15 @@ export function ShareView({ token }: { token: string }) {
     );
   }
 
+  return result.type === 'technique' ? (
+    <TechniqueShareCard technique={result.data} />
+  ) : (
+    <SessionShareCard session={result.data} />
+  );
+}
+
+/** 세션 공유 카드 — 날짜/메타 + 다룬 기술/미디어/메모/태그(읽기 전용). */
+function SessionShareCard({ session }: { session: SharedSession }) {
   const classTypeLabel = session.class_type ? CLASS_TYPE_LABELS[session.class_type] : null;
 
   return (
@@ -231,13 +275,85 @@ export function ShareView({ token }: { token: string }) {
   );
 }
 
+/**
+ * 기술 공유 카드 — 제목 + 종목/벨트(or 레벨)/분류/포지션 칩 + 태그 + 미디어 + 설명 + 주의점(읽기 전용).
+ * TechniqueDetailView 의 found 본문에 충실하되 역참조 세션(이 기술을 다룬)은 소유자 사생활이라 생략한다.
+ */
+function TechniqueShareCard({ technique }: { technique: SharedTechniqueResource }) {
+  return (
+    <article className="rounded-m border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-card)]">
+      {/* 제목 */}
+      <h1 className="text-heading-s text-[var(--text-strong)]">{technique.name}</h1>
+
+      {/* 종목 + 벨트(주짓수) OR 레벨(비벨트) + 분류 · 포지션 (belt↔level 상호배타 — 상세 뷰와 동일). */}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <DisciplineChip discipline={technique.discipline} size="sm" />
+        {usesBelt(technique.discipline) && technique.belt && (
+          <BeltBadge belt={technique.belt} stripes={technique.belt_stripes ?? 0} />
+        )}
+        {!usesBelt(technique.discipline) && technique.level && (
+          <LevelChip level={technique.level} size="sm" />
+        )}
+        <CategoryChip category={technique.category} size="sm" />
+        {technique.position && <PositionChip position={technique.position} size="sm" />}
+      </div>
+
+      {/* 태그 — 붙은 태그 칩 행. 없으면 생략(섹션 잡음 방지 — 상세 뷰와 동일). */}
+      {technique.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {technique.tags.map((t) => (
+            <TagChip key={t} label={t} size="xs" />
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 space-y-3 border-t border-[var(--border-subtle)] pt-3">
+        {/* 미디어 — youtube=facade / external=링크 카드(업로드는 RPC에서 제외됨). */}
+        <section className="space-y-1">
+          <SectionLabel>미디어</SectionLabel>
+          {technique.media.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {technique.media.map((m, i) =>
+                m.kind === 'youtube' && m.youtube_video_id ? (
+                  <YoutubeFacade
+                    key={`yt-${i}`}
+                    videoId={m.youtube_video_id}
+                    title={m.title ?? undefined}
+                  />
+                ) : m.kind === 'external' && m.external_url ? (
+                  <ExternalLinkCard key={`ext-${i}`} url={m.external_url} title={m.title} />
+                ) : null,
+              )}
+            </div>
+          ) : (
+            <p className="text-body-xs-400 text-[var(--text-disabled)]">미디어 없음</p>
+          )}
+        </section>
+
+        {/* 설명 — MarkdownView(F6). 없으면 안내문(상세 뷰와 동일 처리). */}
+        <section className="space-y-1">
+          <SectionLabel>설명</SectionLabel>
+          <MarkdownView source={technique.description_md ?? '설명이 없습니다.'} />
+        </section>
+
+        {/* 주의점 빨강 강조 박스 (Design §9.3 / §7d). details_md 있을 때만 렌더. */}
+        {technique.details_md && technique.details_md.trim() !== '' && (
+          <Callout variant="danger" title="주의점 / 디테일">
+            <MarkdownView source={technique.details_md} />
+          </Callout>
+        )}
+      </div>
+    </article>
+  );
+}
+
 /** 로딩 스켈레톤 — 카드 형태(헤더 + 본문 섹션). loading.tsx와 별개로 쿼리 로딩 동안 표시. */
 function ShareViewSkeleton() {
   return (
     <div
       className="rounded-m border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-card)]"
       aria-busy="true"
-      aria-label="공유 세션 로딩 중"
+      aria-label="공유 로딩 중"
     >
       <Skeleton className="h-6 w-40" />
       <div className="mt-3 flex gap-2">

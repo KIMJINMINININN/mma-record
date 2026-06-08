@@ -12,7 +12,10 @@ const INFRA_DISABLED_MESSAGE =
   '공유 링크는 인프라 연결(NEXT_PUBLIC_AUTH_ENABLED) 후 활성화됩니다.';
 
 /**
- * 공유 링크 생성/재사용 Server Action (F11 / 0022_shares.sql).
+ * 공유 링크 생성/재사용 Server Action (F11 / 0022_shares.sql · 0024_share_technique.sql).
+ *
+ * 세션·기술 **둘 다** 서비스한다 — resource_type('session'|'technique') + resource_id 만 바뀌고
+ * 본문 로직은 동일(shares 행은 polymorphic). 세션 카드 / 기술 상세의 공유 아일랜드가 함께 쓴다.
  *
  * logSession/toggleSessionFavorite 미러: isAuthEnabled() 게이트(도먼시 안내) → 서버 클라 →
  * auth.getUser()(없으면 로그인 필요). RLS(shares_owner_all: auth.uid()=owner_id) 하에서
@@ -24,7 +27,7 @@ const INFRA_DISABLED_MESSAGE =
  * 채우므로 resource_type/resource_id만 넘기고 `.select('token').single()`로 토큰을 회수한다.
  */
 export async function createShare(
-  resourceType: 'session',
+  resourceType: 'session' | 'technique',
   resourceId: string,
 ): Promise<CreateShareResult> {
   if (!isAuthEnabled()) {

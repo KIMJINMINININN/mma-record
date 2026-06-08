@@ -17,6 +17,7 @@ import { CLASS_TYPE_LABELS, type SessionWithDisciplines } from '@/entities/sessi
 import { fetchTechniqueTagNames, TagChip } from '@/entities/tag';
 import { fetchTechniqueMedia, YoutubeFacade, UploadMedia, ExternalLinkCard } from '@/entities/media';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
+import { TechniqueShareButton } from '@/features/share-session';
 import {
   Callout,
   ChevronLeftIcon,
@@ -122,6 +123,8 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
               size="sm"
             />
           )}
+          {/* 공유 링크 복사(F11 / 0024) — 별표와 동일하게 기술 로드 후에만 노출(prefill/preview 상태엔 숨김). */}
+          {technique && <TechniqueShareButton techniqueId={technique.id} />}
           {/* 수정 → 편집 폼(F4-AC1). Button secondary/sm 토큰을 입은 Link. */}
           <Link
             href={`/techniques/${techniqueId}/edit`}
