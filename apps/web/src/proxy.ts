@@ -46,6 +46,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    // `share`(공유 공개 링크)는 제외 — 익명이 로그인 없이 열어야 하므로 세션 갱신 대상에서 뺀다(F11).
+    '/((?!_next/static|_next/image|favicon.ico|api|share|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

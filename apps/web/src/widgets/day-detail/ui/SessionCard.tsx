@@ -1,5 +1,6 @@
 import { MarkdownView } from '@/shared/ui';
 import { SessionFavoriteStar } from '@/features/session-favorite';
+import { SessionShareButton } from '@/features/share-session';
 
 import { SessionEditButton } from './SessionEditButton';
 import { DisciplineChip } from '@/entities/discipline';
@@ -88,8 +89,9 @@ export function SessionCard({ session }: SessionCardProps) {
           )}
         </span>
 
-        {/* 우측 액션 — 수정 진입 + 즐겨찾기 별표(둘 다 클라 아일랜드). */}
+        {/* 우측 액션 — 공유 링크 복사 + 수정 진입 + 즐겨찾기 별표(모두 클라 아일랜드). */}
         <span className="ml-auto flex items-center gap-0.5">
+          <SessionShareButton sessionId={session.id} />
           <SessionEditButton sessionId={session.id} trainedOn={session.trained_on} />
           <SessionFavoriteStar sessionId={session.id} isFavorite={session.is_favorite} />
         </span>

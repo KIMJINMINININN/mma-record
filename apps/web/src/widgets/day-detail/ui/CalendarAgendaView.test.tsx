@@ -14,6 +14,10 @@ vi.mock('@/shared/model/session-editor-store', () => ({
 vi.mock('@/features/session-favorite', () => ({
   SessionFavoriteStar: () => null,
 }));
+// SessionShareButton(공유 아일랜드: 'use server' createShare → server-only 체인)도 동일하게 스텁.
+vi.mock('@/features/share-session', () => ({
+  SessionShareButton: () => null,
+}));
 
 import { CalendarAgendaView } from './CalendarAgendaView';
 import type { SessionWithDisciplines } from '@/entities/session';

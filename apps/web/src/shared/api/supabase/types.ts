@@ -276,6 +276,33 @@ export type Database = {
         }
         Relationships: []
       }
+      shares: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          resource_id: string
+          resource_type: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          resource_id: string
+          resource_type: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          resource_id?: string
+          resource_type?: string
+          token?: string
+        }
+        Relationships: []
+      }
       taggables: {
         Row: {
           id: string
@@ -468,6 +495,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_shared_session: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       log_session: {
         Args: {
           p_class_type?: Database["public"]["Enums"]["class_type"]
