@@ -547,6 +547,10 @@ export type Database = {
         }
         Returns: string
       }
+      register_push_token: {
+        Args: { p_token: string; p_platform: string }
+        Returns: undefined
+      }
       search_all: {
         Args: { p_limit?: number; p_query: string }
         Returns: {

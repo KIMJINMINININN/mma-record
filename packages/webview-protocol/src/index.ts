@@ -98,3 +98,16 @@ export type ReminderMessage = {
 
 /** ReminderMessage.mode 전체 집합 — 런타임 라우팅(네이티브 핸들러 등록)용. */
 export const REMINDER_MESSAGE_MODES = ['REMINDER_SCHEDULE'] as const;
+
+/**
+ * 푸시 토큰 등록 도메인 메시지 (서버 푸시 / 0026_push.sql).
+ * 방향(요청-응답): 웹((app) 인증됨)이 PUSH_TOKEN_REQUEST 송신 → 네이티브가 expo-notifications 권한+
+ * getExpoPushTokenAsync(projectId)로 토큰 획득 → PUSH_TOKEN_REGISTER로 회신 → 웹이 register_push_token RPC upsert.
+ * projectId/권한/디바이스 없으면 네이티브가 조용히 스킵(회신 없음 = 휴면).
+ */
+export type PushTokenMessage =
+  | { mode: 'PUSH_TOKEN_REQUEST'; data?: undefined }
+  | { mode: 'PUSH_TOKEN_REGISTER'; data: { token: string; platform: string } };
+
+/** PushTokenMessage.mode 전체 집합 — 런타임 라우팅(웹 수신 리스너 / 네이티브 핸들러)용. */
+export const PUSH_TOKEN_MESSAGE_MODES = ['PUSH_TOKEN_REQUEST', 'PUSH_TOKEN_REGISTER'] as const;
