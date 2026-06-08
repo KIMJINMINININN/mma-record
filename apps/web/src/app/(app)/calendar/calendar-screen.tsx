@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 
@@ -145,6 +145,13 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
     queryFn: fetchFavoriteSessions,
     enabled: authed && viewMode === 'favorites',
   });
+
+  // 선택일 → URL `?date` 동기화 (새로고침/공유 시 위치 보존 — page가 ?date 를 읽어 복원).
+  // history.replaceState 로 page 재실행·remount 없이 URL만 갱신(Next 지원). 날짜 선택은
+  // 히스토리를 쌓지 않는다(replace). viewMode는 계약상 URL에 넣지 않는다(딥링크는 date 만).
+  useEffect(() => {
+    window.history.replaceState(null, '', `/calendar?date=${selectedKey}`);
+  }, [selectedKey]);
 
   // "즐겨찾기만" 기간내 필터 — 세 세션 목록(월 상세/주/아젠다)에 동일 적용. 월 그리드 점/카운트는
   // calendar_day_summary(별도 소스)라 영향 없음(요약 뷰는 전체 집계 유지 — 문서화된 의도).
