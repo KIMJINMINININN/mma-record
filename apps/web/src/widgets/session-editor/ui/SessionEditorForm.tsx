@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { logSession, logSessionInputSchema } from '@/features/log-session';
+import { logSession, updateSession, logSessionInputSchema } from '@/features/log-session';
 import { MediaPicker, persistMediaDrafts, type MediaDraft } from '@/features/media-upload';
 import { TagInput } from '@/features/tag-filter';
-import { CLASS_TYPE_LABELS } from '@/entities/session';
+import { CLASS_TYPE_LABELS, fetchSessionById, type SessionMediaRef } from '@/entities/session';
 import { fetchTagNames } from '@/entities/tag';
 import { CLASS_TYPES, type ClassType, type Discipline } from '@/shared/model/enums';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
-import { Button } from '@/shared/ui';
+import { Button, HIT_AREA_44 } from '@/shared/ui';
 
 import { DisciplinePicker } from './DisciplinePicker';
 import { IntensityPicker } from './IntensityPicker';
@@ -37,8 +37,11 @@ import type { SessionEditorMode } from '@/shared/model/session-editor-store';
  * 직접 직렬화해 action에 넘기기 때문(인증 폼과 다른 패턴).
  */
 
-// TODO(infra): mode === 'edit' 시 sessionId로 기존 세션 prefill — 현재는 create 경로만.
-//   (mode/sessionId는 호스트가 이미 내려주지만, 편집 prefill은 인프라 후로 의도적 보류)
+/**
+ * 편집 prefill(F3): mode==='edit' + sessionId면 fetchSessionById로 기존 세션을 1회 폼에 채우고
+ * 저장은 updateSession으로 분기한다(create는 logSession). 호스트가 mode/sessionId를 내려준다.
+ * 미디어는 기존 연결을 keptMedia(유지/제거 참조)로 다루고 새 드래프트와 합쳐 desired 집합을 만든다.
+ */
 export interface SessionEditorFormProps {
   /** 호스트가 계산한 효과적 초기 날짜('YYYY-MM-DD', presetDate ?? 오늘). */
   initialDate: string;
@@ -74,7 +77,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-button-xs text-[var(--text-muted)]">{children}</p>;
 }
 
-export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProps) {
+export function SessionEditorForm({ initialDate, mode, sessionId, onDone }: SessionEditorFormProps) {
   // ── 로컬 폼 상태 (호스트가 열릴 때마다 폼을 새로 마운트 → 자동 리셋) ──
   const [trainedOn, setTrainedOn] = useState(initialDate);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
@@ -85,7 +88,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
   const [rounds, setRounds] = useState('');
   const [partners, setPartners] = useState('');
   const [memo, setMemo] = useState('');
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  // 편집 모드면 세부 정보를 펼쳐 시작(prefill 값이 바로 보이게). 생성은 접힘(90초 마찰 목표).
+  const [detailsOpen, setDetailsOpen] = useState(mode === 'edit');
   // 다룬 기술(F4/#6-2) — 내 라이브러리에서 선택한 { technique_id, day_memo_md } 드래프트.
   const [techniqueDrafts, setTechniqueDrafts] = useState<SessionTechniqueDraft[]>([]);
   // 미디어 초안(F5) — 영속화 전이라 RPC로 흘리지 않고 로컬 수집만(아래 handleSave seam 참고).
@@ -103,7 +107,40 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
     enabled: isAuthEnabled(),
   });
 
-  const canSave = disciplines.length > 0 && !pending;
+  // ── 편집 prefill (F3) — mode==='edit' + AUTH ON 일 때만 기존 세션을 페치(단건 캐시 키) ──
+  const isEdit = mode === 'edit' && !!sessionId;
+  const { data: existing } = useQuery({
+    queryKey: ['session', sessionId],
+    queryFn: () => fetchSessionById(sessionId!),
+    enabled: isEdit && isAuthEnabled(),
+  });
+  // 기존 연결 미디어 — 업로드 자산은 File 복원 불가하므로 "유지/제거" 참조로 다룬다(TechniqueForm 패턴).
+  const [keptMedia, setKeptMedia] = useState<SessionMediaRef[]>([]);
+
+  // 같은 세션을 두 번 채워 사용자 편집을 덮어쓰지 않도록 prefill 한 id를 기억(id 변화 기준 1회).
+  const prefilledIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!existing) return;
+    if (prefilledIdRef.current === existing.id) return;
+    prefilledIdRef.current = existing.id;
+    setTrainedOn(existing.trained_on);
+    setDisciplines(existing.disciplines);
+    setGym(existing.gym ?? '');
+    setClassType(existing.class_type ?? '');
+    setDurationMin(existing.duration_min != null ? String(existing.duration_min) : '');
+    setIntensity(existing.intensity ?? null);
+    setRounds(existing.rounds != null ? String(existing.rounds) : '');
+    setPartners(existing.partners ?? '');
+    setMemo(existing.memo_md ?? '');
+    setTechniqueDrafts(
+      existing.techniques.map((t) => ({ technique_id: t.id, day_memo_md: t.day_memo_md })),
+    );
+    setTagNames(existing.tags);
+    setKeptMedia(existing.media);
+  }, [existing]);
+
+  // 편집 모드에선 prefill 로드 전 저장을 막는다(빈 폼 재동기화로 기존 연결이 끊기는 race 방지).
+  const canSave = disciplines.length > 0 && !pending && (!isEdit || existing !== undefined);
 
   function handleSave() {
     const candidate = {
@@ -141,10 +178,16 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         }
       }
 
-      const res = await logSession({
-        ...parsed.data,
-        media: mediaIds.map((id) => ({ media_id: id })),
-      });
+      // 편집: 유지한 기존 미디어 + 새 업로드 = desired 집합(RPC가 media_links 재동기화). 생성: 새 것만.
+      const media = [
+        ...(isEdit ? keptMedia.map((m) => ({ media_id: m.id })) : []),
+        ...mediaIds.map((id) => ({ media_id: id })),
+      ];
+
+      const res =
+        isEdit && sessionId
+          ? await updateSession(sessionId, { ...parsed.data, media })
+          : await logSession({ ...parsed.data, media });
       if (res.ok) {
         toast.success('저장됨');
         onDone();
@@ -152,6 +195,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         void queryClient.invalidateQueries({ queryKey: ['calendar'] });
         // 태그 갱신: 새 태그가 생겼을 수 있어 자동완성/태그 보기 무효화(#6-1).
         void queryClient.invalidateQueries({ queryKey: ['tags'] });
+        // 편집: 이 세션 단건 캐시(prefill 재진입)도 무효화.
+        if (sessionId) void queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
       } else if (res.dormant) {
         toast.info(res.error); // 인프라 전 안내 — 닫지 않음(사용자가 셸 탐색 유지).
       } else {
@@ -294,12 +339,40 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         <TechniquePicker value={techniqueDrafts} onChange={setTechniqueDrafts} />
       </section>
 
-      {/* ── 미디어 (F5) — 유튜브=live, 업로드=초안+프리뷰(저장은 인프라 후) ── */}
+      {/* ── 미디어 (F5/#6-3) — 편집: 기존 연결 유지/제거 + 공통: 새 첨부(유튜브 live / 업로드) ── */}
       <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
         <SectionLabel>미디어</SectionLabel>
+
+        {/* 편집 모드: 기존 연결 미디어 — × 로 제거(저장 시 연결만 끊김, 자산은 보존). */}
+        {keptMedia.length > 0 && (
+          <ul className="flex flex-col gap-1.5">
+            {keptMedia.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center gap-2 rounded-xs border border-[var(--border-subtle)] bg-[var(--surface-base)] px-2.5 py-1.5"
+              >
+                <span className="min-w-0 flex-1 truncate text-body-s-400 text-[var(--text-default)]">
+                  {m.kind === 'youtube' ? 'YouTube 영상' : m.kind === 'external' ? '외부 링크' : '내 영상'}
+                  {m.title ? ` · ${m.title}` : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setKeptMedia((prev) => prev.filter((x) => x.id !== m.id))}
+                  aria-label="연결된 미디어 제거"
+                  className={`shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)] ${HIT_AREA_44}`}
+                >
+                  <svg width={10} height={10} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
+                    <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <MediaPicker value={mediaDrafts} onChange={setMediaDrafts} />
         <p className="text-body-xs-400 text-[var(--text-muted)]">
-          첨부한 미디어는 인프라 연결 후 세션과 함께 저장됩니다.
+          유튜브 링크 또는 60초·100MB 이내 영상(mp4·mov)을 첨부할 수 있어요.
         </p>
       </section>
 

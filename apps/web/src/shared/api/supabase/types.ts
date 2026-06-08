@@ -501,6 +501,26 @@ export type Database = {
       seed_starter_techniques: { Args: { p_user: string }; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      update_session: {
+        Args: {
+          p_class_type?: Database["public"]["Enums"]["class_type"]
+          p_disciplines?: Json
+          p_duration_min?: number
+          p_gym?: string
+          p_intensity?: number
+          p_media?: Json
+          p_memo_md?: string
+          p_partners?: string
+          p_rating?: number
+          p_rounds?: number
+          p_session_id: string
+          p_tag_ids?: Json
+          p_techniques?: Json
+          p_trained_on: string
+          p_user: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       belt: "white" | "blue" | "purple" | "brown" | "black"

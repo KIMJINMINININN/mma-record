@@ -116,6 +116,33 @@ export async function fetchRangeSessions(
   ) as SessionWithDisciplines[];
 }
 
+/**
+ * 단일 세션 조회 (F3 편집 prefill). SESSION_EMBED_SELECT 재사용 + .eq('id').maybeSingle().
+ * 없으면 null(RLS로 본인 것만). 평탄화는 fetchDaySessions와 동일(disciplines/tags/techniques/media).
+ */
+export async function fetchSessionById(sessionId: string): Promise<SessionWithDisciplines | null> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('sessions')
+    .select(SESSION_EMBED_SELECT)
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const { session_disciplines, taggables, session_techniques, media_links, ...s } = data;
+  return {
+    ...s,
+    disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
+    tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+    techniques: (session_techniques ?? [])
+      .filter((st) => st.techniques != null)
+      .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
+    media: (media_links ?? [])
+      .map((ml) => ml.media_assets)
+      .filter((m): m is NonNullable<typeof m> => m != null),
+  } as SessionWithDisciplines;
+}
+
 /** 즐겨찾기 cross-month 뷰의 안전 상한 — 즐겨찾기는 소수라는 전제, 초과 시 최신순 절단. */
 const FAVORITE_SESSIONS_LIMIT = 200;
 

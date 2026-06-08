@@ -68,3 +68,57 @@ export async function logSession(rawInput: LogSessionInput): Promise<LogSessionR
   revalidatePath('/calendar');
   return { ok: true, sessionId: data };
 }
+
+/**
+ * 세션 수정 Server Action (F3 편집, 0021_update_session.sql). logSession 미러 + p_session_id.
+ * sessions 본체 UPDATE + 자식(종목/기술/태그/미디어) 재동기화 — is_favorite/생성시각 불변.
+ * 도먼시: 플래그 OFF면 안내만. 태그는 이름→id 해석(resolveTagIds), 미디어는 이미 media_id.
+ */
+export async function updateSession(
+  sessionId: string,
+  rawInput: LogSessionInput,
+): Promise<LogSessionResult> {
+  const parsed = logSessionInputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? '입력값을 확인하세요.' };
+  }
+  const input = parsed.data;
+
+  if (!isAuthEnabled()) {
+    return { ok: false, dormant: true, error: INFRA_DISABLED_MESSAGE };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth.user;
+  if (!user) return { ok: false, error: '로그인이 필요합니다.' };
+
+  const tagIds = await resolveTagIds(supabase, user.id, input.tag_names);
+
+  const args = {
+    p_user: user.id,
+    p_session_id: sessionId,
+    p_trained_on: input.trained_on,
+    p_gym: input.gym ?? undefined,
+    p_class_type: input.class_type ?? undefined,
+    p_duration_min: input.duration_min ?? undefined,
+    p_intensity: input.intensity ?? undefined,
+    p_rounds: input.rounds ?? undefined,
+    p_partners: input.partners ?? undefined,
+    p_memo_md: input.memo_md ?? undefined,
+    p_rating: input.rating ?? undefined,
+    p_disciplines: input.disciplines,
+    p_techniques: input.techniques,
+    p_tag_ids: tagIds,
+    p_media: input.media,
+  };
+
+  // db:types 생성(인프라) 후 실타입 — rpc 제네릭이 'update_session'(Returns: string)을 안다(types.ts).
+  const { data, error } = await supabase.rpc('update_session', args);
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? '세션 수정에 실패했습니다.' };
+  }
+
+  revalidatePath('/calendar');
+  return { ok: true, sessionId: data };
+}

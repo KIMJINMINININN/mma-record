@@ -9,7 +9,8 @@ import { TechniqueForm } from '@/widgets/technique-editor';
  * 뒤로 링크(기술 상세) + 제목 + TechniqueForm(mode="edit", techniqueId).
  * Next 16: params는 Promise → await로 풀어 techniqueId를 폼에 내린다 → 라우트는 동적(ƒ).
  *
- * TODO(infra): techniqueId로 기존 기술을 페치해 폼 prefill. 현재는 빈 폼(셸) — 위젯이 도먼시 빈 폼을 처리한다.
+ * prefill(F4-AC3): TechniqueForm(mode="edit")이 techniqueId로 기존 기술 본체·태그·미디어를
+ * 페치해 폼에 채운다(AUTH ON). AUTH OFF면 빈 폼 셸 유지(도먼시 게이팅).
  */
 export default async function TechniqueEditPage({
   params,

@@ -1,5 +1,7 @@
 import { MarkdownView } from '@/shared/ui';
 import { SessionFavoriteStar } from '@/features/session-favorite';
+
+import { SessionEditButton } from './SessionEditButton';
 import { DisciplineChip } from '@/entities/discipline';
 import { TagChip } from '@/entities/tag';
 import { YoutubeFacade, UploadMedia, ExternalLinkCard } from '@/entities/media';
@@ -86,12 +88,11 @@ export function SessionCard({ session }: SessionCardProps) {
           )}
         </span>
 
-        {/* 즐겨찾기 별표 — 우측 정렬(PRD §9 P1). 세션 단일 토글 클라 아일랜드. */}
-        <SessionFavoriteStar
-          sessionId={session.id}
-          isFavorite={session.is_favorite}
-          className="ml-auto"
-        />
+        {/* 우측 액션 — 수정 진입 + 즐겨찾기 별표(둘 다 클라 아일랜드). */}
+        <span className="ml-auto flex items-center gap-0.5">
+          <SessionEditButton sessionId={session.id} trainedOn={session.trained_on} />
+          <SessionFavoriteStar sessionId={session.id} isFavorite={session.is_favorite} />
+        </span>
       </header>
 
       {/* 메타 — 체육관 · 파트너 */}
