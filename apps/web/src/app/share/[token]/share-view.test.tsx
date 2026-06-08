@@ -21,6 +21,9 @@ const m = vi.hoisted(() => ({
 vi.mock('@/shared/api/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({ rpc: m.rpc }),
 }));
+// 유효 공유 분기에 함께 마운트되는 코멘트 섹션은 자체 쿼리(auth.getUser/rpc)를 돌린다 — 여기선 카드
+// 렌더만 검증하므로 stub 으로 끊는다(코멘트는 share-comments.test 가 따로 다룬다).
+vi.mock('./share-comments', () => ({ ShareComments: () => null }));
 // 실제 queryFn 을 microtask 로 돌리는 얇은 useQuery — useSharedResource 의 rpc/내로잉을 진짜로 거친다.
 vi.mock('@tanstack/react-query', async () => {
   const { useState, useEffect } = await import('react');

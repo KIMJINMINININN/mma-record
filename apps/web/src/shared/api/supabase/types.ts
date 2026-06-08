@@ -504,6 +504,18 @@ export type Database = {
       }
     }
     Functions: {
+      add_shared_comment: {
+        Args: { p_token: string; p_body: string }
+        Returns: Json
+      }
+      delete_shared_comment: {
+        Args: { p_comment_id: string }
+        Returns: boolean
+      }
+      get_shared_comments: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       get_shared_resource: {
         Args: { p_token: string }
         Returns: Json

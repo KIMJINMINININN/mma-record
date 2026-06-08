@@ -20,6 +20,8 @@ import type {
   TechniqueCategory,
 } from '@/shared/model/enums';
 
+import { ShareComments } from './share-comments';
+
 /**
  * ShareView — 공유 토큰으로 받은 자원(세션 OR 기술)을 익명 읽기 전용으로 렌더
  * (F11 / 0022_shares.sql · 0024_share_technique.sql).
@@ -33,6 +35,9 @@ import type {
  * 카드를 재사용하지 않고 전용 읽기 뷰로 작성한다 — 카드 스타일(토큰·--shadow-card)만 참고. null/빈
  * 반환이면 "존재하지 않거나 만료된 공유" 안내를 보여준다(토큰 추측/만료/삭제 모두 동일 처리 — 자원
  * 존재 여부를 누설하지 않음).
+ *
+ * 유효한 공유에서만 카드 아래에 코멘트 섹션(<ShareComments> · 0025_comments.sql)을 함께 렌더한다
+ * (읽기=익명 포함 누구나, 쓰기=로그인 유저). 무효/빈 공유 분기에선 코멘트를 노출하지 않는다.
  */
 
 /** RPC가 돌려주는 세션 내 기술 항목 jsonb 형태(읽기 전용). get_shared_session의 techniques 항목과 1:1. */
@@ -144,10 +149,18 @@ export function ShareView({ token }: { token: string }) {
     );
   }
 
-  return result.type === 'technique' ? (
-    <TechniqueShareCard technique={result.data} />
-  ) : (
-    <SessionShareCard session={result.data} />
+  // 유효한 공유에서만 카드 + 코멘트 섹션을 함께 렌더한다(로딩/오류/없음 분기에선 코멘트 미노출).
+  const card =
+    result.type === 'technique' ? (
+      <TechniqueShareCard technique={result.data} />
+    ) : (
+      <SessionShareCard session={result.data} />
+    );
+  return (
+    <div className="flex flex-col gap-5">
+      {card}
+      <ShareComments token={token} />
+    </div>
   );
 }
 
