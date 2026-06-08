@@ -1,7 +1,14 @@
-import { splitHoursMinutes, type StreakDay, type TopTechnique, type TrainingStats } from '@/entities/session';
+import {
+  splitHoursMinutes,
+  type PositionCount,
+  type StreakDay,
+  type TopTechnique,
+  type TrainingStats,
+} from '@/entities/session';
 
 import { DisciplineBars } from './DisciplineBars';
 import { FrequencyChart } from './FrequencyChart';
+import { PositionBars } from './PositionBars';
 import { StatCard } from './StatCard';
 import { StreakDisplay } from './StreakDisplay';
 import { TopTechniquesList } from './TopTechniquesList';
@@ -18,9 +25,11 @@ export interface StatsContentProps {
   /** 최근 N일 점 행(StreakDisplay). */
   streakDays: StreakDay[];
   topTechniques: TopTechnique[];
+  /** 포지션별 출현 분포(기간 필터 적용, count>0 내림차순). */
+  positionDistribution: PositionCount[];
 }
 
-export function StatsContent({ stats, streakDays, topTechniques }: StatsContentProps) {
+export function StatsContent({ stats, streakDays, topTechniques, positionDistribution }: StatsContentProps) {
   const { hours, minutes } = splitHoursMinutes(stats.totalMatMinutes);
   const matValue = hours > 0 ? hours : minutes;
   const matUnit = hours > 0 ? '시간' : '분';
@@ -33,6 +42,7 @@ export function StatsContent({ stats, streakDays, topTechniques }: StatsContentP
         <StreakDisplay streak={stats.streak} days={streakDays} />
       </div>
       <DisciplineBars distribution={stats.disciplineDistribution} />
+      <PositionBars distribution={positionDistribution} />
       <FrequencyChart weekly={stats.weekly} monthly={stats.monthly} />
       <TopTechniquesList items={topTechniques} />
     </div>

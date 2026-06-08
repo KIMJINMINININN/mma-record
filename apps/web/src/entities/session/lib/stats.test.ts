@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { DISCIPLINES, type Discipline } from '@/shared/model/enums';
+import { DISCIPLINES, type Discipline, type PositionKind } from '@/shared/model/enums';
 import {
   countTopTechniques,
   computeStreak,
   computeTrainingStats,
   disciplineDistribution,
+  filterByPeriod,
   monthlyFrequency,
+  periodStartISO,
+  positionDistribution,
   splitHoursMinutes,
   streakDays,
   totalMatMinutes,
@@ -254,15 +257,21 @@ describe('streakDays', () => {
 // countTopTechniques
 // ---------------------------------------------------------------------------
 
-function tRow(id: string, name: string, discipline: Discipline = 'bjj_gi'): SessionTechniqueRow {
-  return { technique_id: id, techniques: { id, name, discipline } };
+function tRow(
+  id: string,
+  name: string,
+  discipline: Discipline = 'bjj_gi',
+  position: PositionKind | null = null,
+  trained_on = '2026-06-03',
+): SessionTechniqueRow {
+  return { technique_id: id, trained_on, techniques: { id, name, discipline, position } };
 }
 
 describe('countTopTechniques', () => {
   it('null 조인 행 제외', () => {
     const rows: SessionTechniqueRow[] = [
       tRow('a', '암바'),
-      { technique_id: 'x', techniques: null },
+      { technique_id: 'x', trained_on: '2026-06-03', techniques: null },
     ];
     const top = countTopTechniques(rows, 5);
     expect(top).toHaveLength(1);
@@ -297,7 +306,7 @@ describe('countTopTechniques', () => {
 describe('computeTrainingStats', () => {
   it('전 키 존재 + 분포 exhaustive + 빈도 length 12', () => {
     const rows = [row('2026-06-03', 60, ['bjj_gi']), row('2026-06-02', 30, ['mma'])];
-    const s = computeTrainingStats(rows, TODAY);
+    const s = computeTrainingStats(rows, rows, TODAY);
     expect(s.totalMatMinutes).toBe(90);
     expect(s.sessionCount).toBe(2);
     expect(Object.keys(s.disciplineDistribution)).toHaveLength(DISCIPLINES.length);
@@ -307,8 +316,86 @@ describe('computeTrainingStats', () => {
   });
 
   it('opts.weeks/months 오버라이드', () => {
-    const s = computeTrainingStats([], TODAY, { weeks: 4, months: 6 });
+    const s = computeTrainingStats([], [], TODAY, { weeks: 4, months: 6 });
     expect(s.weekly).toHaveLength(4);
     expect(s.monthly).toHaveLength(6);
+  });
+
+  it('집계량은 filtered, 빈도/스트릭은 all 기준(F10 P2)', () => {
+    // filtered=오늘 1건만, all=오늘+과거연속 → 매트타임/세션수는 filtered, 스트릭은 all
+    const filtered = [row(TODAY, 60, ['bjj_gi'])];
+    const all = [row('2026-06-01', 30, ['mma']), row('2026-06-02', 30, ['mma']), row(TODAY, 60, ['bjj_gi'])];
+    const s = computeTrainingStats(filtered, all, TODAY);
+    expect(s.totalMatMinutes).toBe(60); // filtered만
+    expect(s.sessionCount).toBe(1); // filtered만
+    expect(s.streak).toEqual({ current: 3, longest: 3 }); // all 기준
+    expect(s.weekly.reduce((sum, b) => sum + b.count, 0)).toBe(3); // all 기준
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterByPeriod / periodStartISO (F10 P2)
+// ---------------------------------------------------------------------------
+
+describe('periodStartISO', () => {
+  it("'all' → null(필터 없음)", () => expect(periodStartISO(TODAY, 'all')).toBeNull());
+  it("'1m' → 2026-05-03", () => expect(periodStartISO(TODAY, '1m')).toBe('2026-05-03'));
+  it("'3m' → 2026-03-03", () => expect(periodStartISO(TODAY, '3m')).toBe('2026-03-03'));
+  it("'6m' → 2025-12-03", () => expect(periodStartISO(TODAY, '6m')).toBe('2025-12-03'));
+});
+
+describe('filterByPeriod', () => {
+  it("'all' → 전체 반환", () => {
+    const rows = [row('2020-01-01'), row(TODAY)];
+    expect(filterByPeriod(rows, TODAY, 'all')).toHaveLength(2);
+  });
+
+  it("'1m' → 경계(2026-05-03) 포함, 이전 제외", () => {
+    const rows = [row('2026-05-02'), row('2026-05-03'), row(TODAY)];
+    const out = filterByPeriod(rows, TODAY, '1m');
+    expect(out.map((r) => r.trained_on)).toEqual(['2026-05-03', '2026-06-03']);
+  });
+
+  it('SessionTechniqueRow 에도 동작(제네릭 trained_on)', () => {
+    const rows = [
+      tRow('a', '암바', 'bjj_gi', 'mount', '2026-01-01'),
+      tRow('b', '킥', 'striking', null, TODAY),
+    ];
+    const out = filterByPeriod(rows, TODAY, '1m');
+    expect(out).toHaveLength(1);
+    expect(out[0].technique_id).toBe('b');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// positionDistribution (F10 P2)
+// ---------------------------------------------------------------------------
+
+describe('positionDistribution', () => {
+  it('빈 입력 → []', () => expect(positionDistribution([])).toEqual([]));
+
+  it('position null 기술 제외', () => {
+    const rows = [tRow('a', '킥', 'striking', null), tRow('b', '암바', 'bjj_gi', 'mount')];
+    expect(positionDistribution(rows)).toEqual([{ position: 'mount', count: 1 }]);
+  });
+
+  it('포지션별 카운트 + count 내림차순', () => {
+    const rows = [
+      tRow('a', 'A', 'bjj_gi', 'mount'),
+      tRow('b', 'B', 'bjj_gi', 'mount'),
+      tRow('c', 'C', 'bjj_gi', 'closed_guard'),
+    ];
+    expect(positionDistribution(rows)).toEqual([
+      { position: 'mount', count: 2 },
+      { position: 'closed_guard', count: 1 },
+    ]);
+  });
+
+  it('null 조인 행 제외', () => {
+    const rows: SessionTechniqueRow[] = [
+      { technique_id: 'x', trained_on: TODAY, techniques: null },
+      tRow('a', '암바', 'bjj_gi', 'mount'),
+    ];
+    expect(positionDistribution(rows)).toEqual([{ position: 'mount', count: 1 }]);
   });
 });

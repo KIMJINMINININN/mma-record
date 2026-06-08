@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 
@@ -9,12 +9,17 @@ import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { useSessionEditorStore } from '@/shared/model/session-editor-store';
 import {
   DATE_FMT,
+  STAT_PERIODS,
   computeTrainingStats,
+  countTopTechniques,
   fetchAllSessionStatRows,
-  fetchTopTechniques,
+  fetchSessionTechniqueRows,
+  filterByPeriod,
+  positionDistribution,
   streakDays,
+  type StatPeriod,
 } from '@/entities/session';
-import { StatsContent, StatsSkeleton } from '@/widgets/stats';
+import { PeriodFilter, StatsContent, StatsSkeleton } from '@/widgets/stats';
 
 /**
  * StatsScreen — F10 통계 대시보드 클라이언트 아일랜드 (PRD §F10 / 구현계획 §2, Pattern A).
@@ -30,6 +35,7 @@ export function StatsScreen() {
   // 기준 날짜 — 마운트 1회 고정(렌더마다 스트릭/윈도우가 흔들리지 않게). 브라우저 로컬 tz 기준
   // (trained_on은 KST 날짜; KST 사용자 가정 — 비-KST 보정은 후속 과제).
   const today = useMemo(() => dayjs().format(DATE_FMT), []);
+  const [period, setPeriod] = useState<StatPeriod>('all');
 
   const sessionsQuery = useQuery({
     queryKey: ['stats', 'sessions'],
@@ -38,14 +44,25 @@ export function StatsScreen() {
   });
   const techniquesQuery = useQuery({
     queryKey: ['stats', 'techniques'],
-    queryFn: () => fetchTopTechniques(10),
+    queryFn: fetchSessionTechniqueRows,
     enabled: authEnabled,
   });
 
-  // 집계는 데이터/날짜가 바뀔 때만 — 렌더마다 재계산/신규 배열 방지(하위 트리 안정).
+  // 집계는 데이터/날짜/기간이 바뀔 때만 — 렌더마다 재계산/신규 배열 방지(하위 트리 안정).
   const rows = useMemo(() => sessionsQuery.data ?? [], [sessionsQuery.data]);
-  const stats = useMemo(() => (rows.length > 0 ? computeTrainingStats(rows, today) : null), [rows, today]);
+  const techRows = useMemo(() => techniquesQuery.data ?? [], [techniquesQuery.data]);
+  // 집계량(매트타임·종목분포·포지션·최다복습)은 기간 필터 적용, 시계열(빈도·스트릭)은 전체 유지.
+  const filtered = useMemo(() => filterByPeriod(rows, today, period), [rows, today, period]);
+  const filteredTech = useMemo(() => filterByPeriod(techRows, today, period), [techRows, today, period]);
+  const stats = useMemo(
+    () => (rows.length > 0 ? computeTrainingStats(filtered, rows, today) : null),
+    [filtered, rows, today],
+  );
+  const posDist = useMemo(() => positionDistribution(filteredTech), [filteredTech]);
+  const topTech = useMemo(() => countTopTechniques(filteredTech, 10), [filteredTech]);
   const dots = useMemo(() => streakDays(rows, today, 14), [rows, today]);
+  const periodSuffix =
+    period === 'all' ? '전체 기간 기준' : `최근 ${STAT_PERIODS.find((p) => p.id === period)?.label} 기준`;
 
   function renderBody() {
     if (!authEnabled) {
@@ -91,22 +108,32 @@ export function StatsScreen() {
         />
       );
     }
-    return <StatsContent stats={stats} streakDays={dots} topTechniques={techniquesQuery.data ?? []} />;
+    return (
+      <StatsContent
+        stats={stats}
+        streakDays={dots}
+        topTechniques={topTech}
+        positionDistribution={posDist}
+      />
+    );
   }
 
   return (
     <section aria-labelledby="stats-heading" className="mx-auto max-w-3xl">
       <header className="mb-6">
-        <h1
-          id="stats-heading"
-          className="flex items-center gap-2 text-heading-l text-[var(--text-strong)]"
-        >
-          <StatsIcon width={22} height={22} className="text-[var(--text-muted)]" />
-          통계
-        </h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1
+            id="stats-heading"
+            className="flex items-center gap-2 text-heading-l text-[var(--text-strong)]"
+          >
+            <StatsIcon width={22} height={22} className="text-[var(--text-muted)]" />
+            통계
+          </h1>
+          {authEnabled && stats && <PeriodFilter value={period} onChange={setPeriod} />}
+        </div>
         {authEnabled && stats && (
           <p className="mt-1 text-body-s-400 tabular-nums text-[var(--text-muted)]">
-            총 {stats.sessionCount}개 세션 · 전체 기간 기준
+            총 {stats.sessionCount}개 세션 · {periodSuffix}
           </p>
         )}
       </header>

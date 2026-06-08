@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { DISCIPLINES, type Discipline } from '@/shared/model/enums';
+import { DISCIPLINES, type Discipline, type PositionKind } from '@/shared/model/enums';
 
 /**
  * F10 통계 집계 — 순수 함수 (PRD §F10 · 구현계획 §4).
@@ -19,6 +19,18 @@ export const DATE_FMT = 'YYYY-MM-DD';
 /** 주간 빈도 "습관 형성" 목표선 (PRD §10 — 주 3회 이상). */
 export const WEEKLY_GOAL = 3;
 
+/**
+ * 기간 필터 구간 (F10 P2). 'all'=전체, 나머지는 today 기준 최근 N개월.
+ * 집계량(매트타임·종목분포·포지션·최다복습)에만 적용 — 시계열 지표(스트릭·빈도)는 전체 유지.
+ */
+export type StatPeriod = 'all' | '6m' | '3m' | '1m';
+export const STAT_PERIODS: { id: StatPeriod; label: string }[] = [
+  { id: 'all', label: '전체' },
+  { id: '6m', label: '6개월' },
+  { id: '3m', label: '3개월' },
+  { id: '1m', label: '1개월' },
+];
+
 /** 집계 입력용 슬림 세션 행 (fetchAllSessionStatRows가 반환). */
 export type StatSessionRow = {
   /** 'YYYY-MM-DD' (KST 날짜) */
@@ -29,10 +41,12 @@ export type StatSessionRow = {
   disciplines: Discipline[];
 };
 
-/** session_techniques → techniques 평탄화 직전의 원시 행 (최다 복습 집계 입력). */
+/** session_techniques → techniques 평탄화 직전의 원시 행 (최다 복습·포지션 분포 집계 입력). */
 export type SessionTechniqueRow = {
   technique_id: string;
-  techniques: { id: string; name: string; discipline: Discipline } | null;
+  /** 소속 세션 훈련일('YYYY-MM-DD') — 기간 필터용(F10 P2). */
+  trained_on: string;
+  techniques: { id: string; name: string; discipline: Discipline; position: PositionKind | null } | null;
 };
 
 /** 빈도 차트 버킷 1개(주 또는 월). */
@@ -41,6 +55,8 @@ export type StreakResult = { current: number; longest: number };
 /** 스트릭 점 행의 하루. */
 export type StreakDay = { dateISO: string; trained: boolean; isToday: boolean };
 export type TopTechnique = { id: string; name: string; discipline: Discipline; count: number };
+/** 포지션별 출현 수 (F10 P2 — 다룬 기술의 position 집계, count>0 내림차순). */
+export type PositionCount = { position: PositionKind; count: number };
 
 export interface TrainingStats {
   totalMatMinutes: number;
@@ -50,6 +66,28 @@ export interface TrainingStats {
   weekly: FrequencyBucket[];
   monthly: FrequencyBucket[];
   streak: StreakResult;
+}
+
+// ---------------------------------------------------------------------------
+// 기간 필터 (F10 P2) — 집계량 지표에만 적용
+// ---------------------------------------------------------------------------
+
+/** period 시작 경계(포함, 'YYYY-MM-DD'). 'all'이면 null(필터 없음). today 기준 최근 N개월. */
+export function periodStartISO(today: string, period: StatPeriod): string | null {
+  if (period === 'all') return null;
+  const months = period === '6m' ? 6 : period === '3m' ? 3 : 1;
+  return dayjs(today).subtract(months, 'month').format(DATE_FMT);
+}
+
+/** trained_on이 period 시작 이후(포함)인 행만. 문자열 비교('YYYY-MM-DD' 사전순=시간순, DST 무관). */
+export function filterByPeriod<T extends { trained_on: string }>(
+  rows: T[],
+  today: string,
+  period: StatPeriod,
+): T[] {
+  const start = periodStartISO(today, period);
+  if (start === null) return rows;
+  return rows.filter((r) => r.trained_on >= start);
 }
 
 // ---------------------------------------------------------------------------
@@ -222,21 +260,42 @@ export function countTopTechniques(rows: SessionTechniqueRow[], limit = 5): TopT
     .slice(0, limit);
 }
 
+/**
+ * 다룬 기술의 포지션별 출현 수 (F10 P2). position null인 기술(예: 일부 타격)은 제외.
+ * count 내림차순. UNIQUE(session_id, technique_id) 덕에 행 1개 = 세션 1건.
+ */
+export function positionDistribution(rows: SessionTechniqueRow[]): PositionCount[] {
+  const counts = new Map<PositionKind, number>();
+  for (const r of rows) {
+    const pos = r.techniques?.position;
+    if (!pos) continue;
+    counts.set(pos, (counts.get(pos) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([position, count]) => ({ position, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 // ---------------------------------------------------------------------------
 // 합성
 // ---------------------------------------------------------------------------
 
+/**
+ * 합성 (F10 P2). 집계량(매트타임·세션수·종목분포)은 `filteredRows`(기간 필터 적용),
+ * 시계열 지표(빈도·스트릭)는 `allRows`(전체) 기준. period='all'이면 둘이 동일.
+ */
 export function computeTrainingStats(
-  rows: StatSessionRow[],
+  filteredRows: StatSessionRow[],
+  allRows: StatSessionRow[],
   today: string,
   opts: { weeks?: number; months?: number } = {},
 ): TrainingStats {
   return {
-    totalMatMinutes: totalMatMinutes(rows),
-    sessionCount: rows.length,
-    disciplineDistribution: disciplineDistribution(rows),
-    weekly: weeklyFrequency(rows, today, opts.weeks ?? 12),
-    monthly: monthlyFrequency(rows, today, opts.months ?? 12),
-    streak: computeStreak(rows, today),
+    totalMatMinutes: totalMatMinutes(filteredRows),
+    sessionCount: filteredRows.length,
+    disciplineDistribution: disciplineDistribution(filteredRows),
+    weekly: weeklyFrequency(allRows, today, opts.weeks ?? 12),
+    monthly: monthlyFrequency(allRows, today, opts.months ?? 12),
+    streak: computeStreak(allRows, today),
   };
 }

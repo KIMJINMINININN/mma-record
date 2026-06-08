@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
-import { countTopTechniques, type SessionTechniqueRow, type StatSessionRow, type TopTechnique } from '../lib/stats';
+import type { SessionTechniqueRow, StatSessionRow } from '../lib/stats';
 
 /**
  * F10 통계 데이터 접근 (client) — PRD §F10 / 구현계획 §2.
@@ -51,22 +51,32 @@ export async function fetchAllSessionStatRows(): Promise<StatSessionRow[]> {
 }
 
 /**
- * 최다 복습 기술 상위 `limit`개. session_techniques(본인 소유, parent-ownership RLS) 전 행을
- * 페이지네이션으로 모아 technique_id로 그룹 카운트(countTopTechniques). 그룹/정렬은 순수 함수에서.
+ * 세션-기술 원시 행 (F10 P2). technique + 소속 세션 trained_on(기간 필터용) + position(포지션 분포용).
+ * session_techniques(본인 소유, parent-ownership RLS) 전 행을 페이지네이션으로 모은다.
+ * 호출부(StatsScreen)가 기간 필터 후 countTopTechniques / positionDistribution 을 적용한다.
+ *
+ * sessions 임베드는 session_techniques.session_id NOT NULL FK라 to-one(단일 객체)로 추론된다
+ * (fetchTechniqueSessions와 동일 관용구). 방어적으로 trained_on null은 ''로 폴백(필터에서 제외됨).
  */
-export async function fetchTopTechniques(limit = 5): Promise<TopTechnique[]> {
+export async function fetchSessionTechniqueRows(): Promise<SessionTechniqueRow[]> {
   const supabase = createSupabaseBrowserClient();
   const rows: SessionTechniqueRow[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('session_techniques')
-      .select('technique_id, techniques(id, name, discipline)')
+      .select('technique_id, sessions(trained_on), techniques(id, name, discipline, position)')
       .order('id', { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw error;
     const page = data ?? [];
-    for (const r of page) rows.push({ technique_id: r.technique_id, techniques: r.techniques });
+    for (const r of page) {
+      rows.push({
+        technique_id: r.technique_id,
+        trained_on: r.sessions?.trained_on ?? '',
+        techniques: r.techniques,
+      });
+    }
     if (page.length < PAGE) break;
   }
-  return countTopTechniques(rows, limit);
+  return rows;
 }
