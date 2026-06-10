@@ -1,5 +1,15 @@
+import { z } from 'zod';
 import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
-import { myGymSchema, gymPreviewSchema, type MyGym, type GymPreview } from '../model/gym';
+import {
+  myGymSchema,
+  gymPreviewSchema,
+  pendingRequestSchema,
+  joinRequestSchema,
+  type MyGym,
+  type GymPreview,
+  type PendingRequest,
+  type JoinRequest,
+} from '../model/gym';
 
 /**
  * 체육관 읽기 쿼리 (entities/gym).
@@ -27,4 +37,25 @@ export async function fetchGymByInviteCode(code: string): Promise<GymPreview | n
   if (error) throw error;
   if (data == null) return null;
   return gymPreviewSchema.parse(data);
+}
+
+/** 가입 요청 react-query 키(미소속 화면 + staff 목록). */
+export const PENDING_REQUEST_KEY = ['gym', 'my-pending'] as const;
+export const JOIN_REQUESTS_KEY = ['gym', 'join-requests'] as const;
+
+/** 내 대기 중 가입 요청. 없으면 null. */
+export async function getMyPendingRequest(): Promise<PendingRequest | null> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc('get_my_pending_request');
+  if (error) throw error;
+  if (data == null) return null;
+  return pendingRequestSchema.parse(data);
+}
+
+/** 체육관 가입 요청 목록(staff). */
+export async function listGymJoinRequests(): Promise<JoinRequest[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc('list_gym_join_requests');
+  if (error) throw error;
+  return z.array(joinRequestSchema).parse(data ?? []);
 }

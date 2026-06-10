@@ -60,9 +60,13 @@ vi.mock('@tanstack/react-query', async () => {
 
 import { GymSection } from './GymSection';
 
-function rpcReturnsMyGym(value: unknown) {
+function setupRpc(opts: { myGym?: unknown; pending?: unknown; requests?: unknown[] } = {}) {
   m.rpc.mockImplementation((fn: string) => {
-    if (fn === 'get_my_gym') return Promise.resolve({ data: value, error: null });
+    if (fn === 'get_my_gym') return Promise.resolve({ data: opts.myGym ?? null, error: null });
+    if (fn === 'get_my_pending_request')
+      return Promise.resolve({ data: opts.pending ?? null, error: null });
+    if (fn === 'list_gym_join_requests')
+      return Promise.resolve({ data: opts.requests ?? [], error: null });
     return Promise.resolve({ data: null, error: null });
   });
 }
@@ -78,6 +82,7 @@ const ownerGym = {
   is_owner: true,
   is_staff: true,
   invite_code: 'A3F9C2D1',
+  pending_count: 0,
   created_at: TS,
   members: [
     { user_id: OWNER, name: '관장', role: 'owner', joined_at: TS, is_me: true },
@@ -92,6 +97,7 @@ const memberGym = {
   is_owner: false,
   is_staff: false,
   invite_code: null,
+  pending_count: 0,
   created_at: TS,
   members: [
     { user_id: null, name: '관장', role: 'owner', joined_at: TS, is_me: false },
@@ -106,26 +112,46 @@ afterEach(cleanup);
 
 describe('GymSection', () => {
   it('미소속 → 생성·가입 폼', async () => {
-    rpcReturnsMyGym(null);
+    setupRpc();
     render(<GymSection />);
     expect(await screen.findByRole('button', { name: '체육관 만들기' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '가입하기' })).toBeInTheDocument();
   });
 
-  it('관장 → 초대코드·명단·삭제·내보내기', async () => {
-    rpcReturnsMyGym(ownerGym);
+  it('미소속 + 대기 요청 → "요청 대기 중" + 취소', async () => {
+    setupRpc({ pending: { name: '관장님 체육관', requested_at: TS } });
+    render(<GymSection />);
+    expect(await screen.findByText(/가입 요청 대기 중/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '요청 취소' })).toBeInTheDocument();
+    // 대기 중엔 생성/가입 폼 미노출
+    expect(screen.queryByRole('button', { name: '체육관 만들기' })).toBeNull();
+  });
+
+  it('관장 → 초대코드·명단·삭제·내보내기·코치 지정', async () => {
+    setupRpc({ myGym: ownerGym });
     render(<GymSection />);
     expect(await screen.findByText('관장님 체육관')).toBeInTheDocument();
     expect(screen.getByText('A3F9C2D1')).toBeInTheDocument();
     expect(screen.getByText('김선수')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '체육관 삭제' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '내보내기' })).toBeInTheDocument();
-    // 코치 역할 분리(Phase ③) — 관장은 관원에게 코치 지정 가능
     expect(screen.getByRole('button', { name: '코치 지정' })).toBeInTheDocument();
   });
 
+  it('관장 + 가입 요청 → 승인/거절', async () => {
+    setupRpc({
+      myGym: { ...ownerGym, pending_count: 1 },
+      requests: [{ user_id: MEMBER, name: '박선수', requested_at: TS }],
+    });
+    render(<GymSection />);
+    expect(await screen.findByText(/가입 요청 1건/)).toBeInTheDocument();
+    expect(screen.getByText('박선수')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '승인' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '거절' })).toBeInTheDocument();
+  });
+
   it('관원 → 탈퇴 / 초대코드·내보내기 없음', async () => {
-    rpcReturnsMyGym(memberGym);
+    setupRpc({ myGym: memberGym });
     render(<GymSection />);
     expect(await screen.findByText('관장님 체육관')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '탈퇴' })).toBeInTheDocument();

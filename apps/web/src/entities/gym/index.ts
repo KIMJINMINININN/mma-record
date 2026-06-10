@@ -9,9 +9,21 @@ export {
   gymMemberSchema,
   myGymSchema,
   gymPreviewSchema,
+  pendingRequestSchema,
+  joinRequestSchema,
   type GymRole,
   type GymMember,
   type MyGym,
   type GymPreview,
+  type PendingRequest,
+  type JoinRequest,
 } from './model/gym';
-export { fetchMyGym, fetchGymByInviteCode, GYM_QUERY_KEY } from './api/gym-queries';
+export {
+  fetchMyGym,
+  fetchGymByInviteCode,
+  getMyPendingRequest,
+  listGymJoinRequests,
+  GYM_QUERY_KEY,
+  PENDING_REQUEST_KEY,
+  JOIN_REQUESTS_KEY,
+} from './api/gym-queries';

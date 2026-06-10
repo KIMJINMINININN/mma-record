@@ -30,14 +30,14 @@ export function GymJoinView({ code }: { code: string }) {
 
   const onJoin = () => {
     startTransition(async () => {
-      const { error } = await createSupabaseBrowserClient().rpc('join_gym', {
+      const { error } = await createSupabaseBrowserClient().rpc('request_join_gym', {
         p_invite_code: code,
       });
       if (error) {
         toast.error(error.message);
         return;
       }
-      toast.success('체육관에 가입했어요');
+      toast.success('가입 요청을 보냈어요');
       router.push('/profile');
     });
   };
@@ -72,7 +72,7 @@ export function GymJoinView({ code }: { code: string }) {
           나중에
         </Button>
         <Button disabled={pending} onClick={onJoin}>
-          가입하기
+          가입 요청
         </Button>
       </div>
     </div>

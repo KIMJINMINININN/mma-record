@@ -528,9 +528,29 @@ export type Database = {
         Args: never
         Returns: Json
       }
-      join_gym: {
+      request_join_gym: {
         Args: { p_invite_code: string }
         Returns: Json
+      }
+      get_my_pending_request: {
+        Args: never
+        Returns: Json
+      }
+      cancel_join_request: {
+        Args: never
+        Returns: boolean
+      }
+      list_gym_join_requests: {
+        Args: never
+        Returns: Json
+      }
+      approve_gym_join_request: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      reject_gym_join_request: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
       get_gym_feed: {
         Args: never

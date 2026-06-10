@@ -10,10 +10,15 @@ import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
 import {
   fetchMyGym,
+  getMyPendingRequest,
+  listGymJoinRequests,
   GYM_QUERY_KEY,
+  PENDING_REQUEST_KEY,
+  JOIN_REQUESTS_KEY,
   GYM_NAME_MAX,
   gymNameSchema,
   type GymMember,
+  type JoinRequest,
 } from '@/entities/gym';
 
 /**
@@ -38,6 +43,18 @@ export function GymSection() {
     queryKey: GYM_QUERY_KEY,
     queryFn: fetchMyGym,
     enabled: authed,
+  });
+  // 미소속일 때만 내 대기 요청을 조회(있으면 "요청 대기 중" 표시).
+  const { data: pendingReq } = useQuery({
+    queryKey: PENDING_REQUEST_KEY,
+    queryFn: getMyPendingRequest,
+    enabled: authed && !isLoading && !gym,
+  });
+  // staff + 대기 요청 있을 때만 요청 목록 조회.
+  const { data: joinRequests = [] } = useQuery({
+    queryKey: JOIN_REQUESTS_KEY,
+    queryFn: listGymJoinRequests,
+    enabled: authed && !!gym?.is_staff && (gym?.pending_count ?? 0) > 0,
   });
 
   const [name, setName] = useState('');
@@ -82,8 +99,21 @@ export function GymSection() {
       toast.error('초대코드를 입력해 주세요');
       return;
     }
-    run(() => sb().rpc('join_gym', { p_invite_code: c }), '체육관에 가입했어요', () => setCode(''));
+    run(() => sb().rpc('request_join_gym', { p_invite_code: c }), '가입 요청을 보냈어요', () =>
+      setCode(''),
+    );
   };
+
+  const onCancelRequest = () => {
+    if (!window.confirm('가입 요청을 취소할까요?')) return;
+    run(() => sb().rpc('cancel_join_request'), '가입 요청을 취소했어요');
+  };
+
+  const onApprove = (r: JoinRequest) =>
+    run(() => sb().rpc('approve_gym_join_request', { p_user_id: r.user_id }), `${r.name} 가입 승인`);
+
+  const onReject = (r: JoinRequest) =>
+    run(() => sb().rpc('reject_gym_join_request', { p_user_id: r.user_id }), `${r.name} 요청 거절`);
 
   const onCopyCode = async () => {
     if (!gym?.invite_code) return;
@@ -135,6 +165,20 @@ export function GymSection() {
       ) : isLoading ? (
         <p className="text-body-s-400 text-[var(--text-muted)]">불러오는 중…</p>
       ) : !gym ? (
+        pendingReq ? (
+          // ── 가입 요청 대기 중 ────────────────────────────
+          <div>
+            <p className="mb-1 text-body-s-400 text-[var(--text-strong)]">
+              <span className="text-[var(--text-muted)]">가입 요청 대기 중:</span> {pendingReq.name}
+            </p>
+            <p className="mb-3 text-body-xs-400 text-[var(--text-muted)]">
+              관장이 승인하면 체육관에 들어가요.
+            </p>
+            <Button size="sm" variant="secondary" disabled={pending} onClick={onCancelRequest}>
+              요청 취소
+            </Button>
+          </div>
+        ) : (
         // ── 미소속: 생성 + 가입 ──────────────────────────────
         <div>
           <p className="mb-4 text-body-xs-400 text-[var(--text-muted)]">
@@ -185,6 +229,7 @@ export function GymSection() {
             </Button>
           </div>
         </div>
+        )
       ) : (
         // ── 소속: 체육관 뷰 ──────────────────────────────────
         <div>
@@ -211,6 +256,36 @@ export function GymSection() {
                   </Button>
                 </div>
               </div>
+            </div>
+          ) : null}
+
+          {gym.is_staff && joinRequests.length > 0 ? (
+            <div className="mb-3 rounded-m border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3">
+              <p className="mb-2 text-body-xs-400 text-[var(--text-muted)]">
+                가입 요청 {joinRequests.length}건
+              </p>
+              <ul className="flex flex-col gap-2">
+                {joinRequests.map((r) => (
+                  <li key={r.user_id} className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate text-body-s-400 text-[var(--text-strong)]">
+                      {r.name}
+                    </span>
+                    <span className="flex shrink-0 gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={pending}
+                        onClick={() => onApprove(r)}
+                      >
+                        승인
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={pending} onClick={() => onReject(r)}>
+                        거절
+                      </Button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
 

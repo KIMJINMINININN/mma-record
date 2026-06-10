@@ -37,9 +37,26 @@ export const myGymSchema = z.object({
   /** 관장 OR 코치 — 피드 전체 열람·모더레이션 가능(Phase ③). */
   is_staff: z.boolean(),
   invite_code: z.string().nullable(),
+  /** 대기 중 가입 요청 수(staff에게만 >0; 그 외 0). */
+  pending_count: z.number(),
   created_at: isoTimestamp,
   members: z.array(gymMemberSchema),
 });
+
+/** 내 대기 중 가입 요청(get_my_pending_request) — 없으면 null. */
+export const pendingRequestSchema = z.object({
+  name: z.string(),
+  requested_at: isoTimestamp,
+});
+export type PendingRequest = z.infer<typeof pendingRequestSchema>;
+
+/** 가입 요청 항목(list_gym_join_requests) — staff용. */
+export const joinRequestSchema = z.object({
+  user_id: z.string().uuid(),
+  name: z.string(),
+  requested_at: isoTimestamp,
+});
+export type JoinRequest = z.infer<typeof joinRequestSchema>;
 export type MyGym = z.infer<typeof myGymSchema>;
 
 /** get_gym_by_invite_code 반환(무효 코드면 null) — 가입 전 미리보기. */
