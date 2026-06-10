@@ -572,6 +572,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      set_gym_member_role: {
+        Args: { p_user_id: string; p_role: string }
+        Returns: boolean
+      }
       rotate_gym_invite_code: {
         Args: never
         Returns: string

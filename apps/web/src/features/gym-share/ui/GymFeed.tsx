@@ -55,7 +55,7 @@ export function GymFeed() {
       <div className="mb-4">
         <h1 className="text-heading-l text-[var(--text-strong)]">{gym.name} · 피드</h1>
         <p className="mt-1 text-body-s-400 text-[var(--text-muted)]">
-          {gym.is_owner ? '관원들이 체육관에 공유한 기록이에요.' : '내가 체육관에 공유한 기록이에요.'}
+          {gym.is_staff ? '관원들이 체육관에 공유한 기록이에요.' : '내가 체육관에 공유한 기록이에요.'}
         </p>
       </div>
 
@@ -65,7 +65,7 @@ export function GymFeed() {
         <EmptyState
           title="아직 공유된 기록이 없어요"
           description={
-            gym.is_owner
+            gym.is_staff
               ? '관원이 세션·기술을 체육관에 공유하면 여기에 표시돼요.'
               : '세션·기술 카드의 “🏠 체육관” 버튼으로 공유해 보세요.'
           }

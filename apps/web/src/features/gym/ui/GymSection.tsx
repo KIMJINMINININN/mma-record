@@ -106,6 +106,14 @@ export function GymSection() {
     run(() => sb().rpc('remove_gym_member', { p_user_id: m.user_id! }), '관원을 내보냈어요');
   };
 
+  const onSetRole = (m: GymMember, role: 'coach' | 'member') => {
+    if (!m.user_id) return;
+    run(
+      () => sb().rpc('set_gym_member_role', { p_user_id: m.user_id!, p_role: role }),
+      role === 'coach' ? '코치로 지정했어요' : '관원으로 변경했어요',
+    );
+  };
+
   const onLeave = () => {
     if (!window.confirm('이 체육관에서 탈퇴할까요?')) return;
     run(() => sb().rpc('leave_gym'), '체육관에서 탈퇴했어요');
@@ -216,14 +224,35 @@ export function GymSection() {
                   {m.name}
                   {m.is_me ? ' (나)' : ''}
                 </span>
-                <span className="flex shrink-0 items-center gap-2">
+                <span className="flex shrink-0 items-center gap-1">
                   <span className="text-body-xs-400 text-[var(--text-muted)]">
                     {ROLE_LABEL[m.role]}
                   </span>
-                  {gym.is_owner && !m.is_me ? (
-                    <Button size="sm" variant="ghost" disabled={pending} onClick={() => onKick(m)}>
-                      내보내기
-                    </Button>
+                  {gym.is_owner && !m.is_me && m.role !== 'owner' ? (
+                    <>
+                      {m.role === 'member' ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={pending}
+                          onClick={() => onSetRole(m, 'coach')}
+                        >
+                          코치 지정
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={pending}
+                          onClick={() => onSetRole(m, 'member')}
+                        >
+                          코치 해제
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" disabled={pending} onClick={() => onKick(m)}>
+                        내보내기
+                      </Button>
+                    </>
                   ) : null}
                 </span>
               </li>

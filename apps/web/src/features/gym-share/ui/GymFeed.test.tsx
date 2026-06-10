@@ -27,7 +27,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { GymFeed } from './GymFeed';
 
-const GYM = { id: 'g1', name: '관장님 체육관', is_owner: true, invite_code: 'X', created_at: '', members: [] };
+const GYM = { id: 'g1', name: '관장님 체육관', is_owner: true, is_staff: true, invite_code: 'X', created_at: '', members: [] };
 const item = (over: Record<string, unknown>) => ({
   id: 'f1',
   resource_type: 'session',

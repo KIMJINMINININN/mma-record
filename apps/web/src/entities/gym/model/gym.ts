@@ -34,6 +34,8 @@ export const myGymSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   is_owner: z.boolean(),
+  /** 관장 OR 코치 — 피드 전체 열람·모더레이션 가능(Phase ③). */
+  is_staff: z.boolean(),
   invite_code: z.string().nullable(),
   created_at: isoTimestamp,
   members: z.array(gymMemberSchema),

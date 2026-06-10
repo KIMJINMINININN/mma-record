@@ -76,6 +76,7 @@ const ownerGym = {
   id: '11111111-1111-4111-8111-111111111111',
   name: '관장님 체육관',
   is_owner: true,
+  is_staff: true,
   invite_code: 'A3F9C2D1',
   created_at: TS,
   members: [
@@ -89,6 +90,7 @@ const memberGym = {
   id: '11111111-1111-4111-8111-111111111111',
   name: '관장님 체육관',
   is_owner: false,
+  is_staff: false,
   invite_code: null,
   created_at: TS,
   members: [
@@ -118,6 +120,8 @@ describe('GymSection', () => {
     expect(screen.getByText('김선수')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '체육관 삭제' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '내보내기' })).toBeInTheDocument();
+    // 코치 역할 분리(Phase ③) — 관장은 관원에게 코치 지정 가능
+    expect(screen.getByRole('button', { name: '코치 지정' })).toBeInTheDocument();
   });
 
   it('관원 → 탈퇴 / 초대코드·내보내기 없음', async () => {
