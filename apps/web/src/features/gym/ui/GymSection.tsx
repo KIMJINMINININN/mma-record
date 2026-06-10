@@ -100,8 +100,9 @@ export function GymSection() {
   };
 
   const onKick = (m: GymMember) => {
+    if (!m.user_id) return; // user_id는 관장 시점에만 채워짐(0028 M4) — 강퇴는 관장만이라 항상 존재
     if (!window.confirm(`${m.name} 관원을 내보낼까요?`)) return;
-    run(() => sb().rpc('remove_gym_member', { p_user_id: m.user_id }), '관원을 내보냈어요');
+    run(() => sb().rpc('remove_gym_member', { p_user_id: m.user_id! }), '관원을 내보냈어요');
   };
 
   const onLeave = () => {
@@ -208,8 +209,8 @@ export function GymSection() {
             관원 {gym.members.length}명
           </p>
           <ul className="mb-3 divide-y divide-[var(--border-subtle)]">
-            {gym.members.map((m) => (
-              <li key={m.user_id} className="flex items-center justify-between gap-2 py-2">
+            {gym.members.map((m, i) => (
+              <li key={m.user_id ?? `m-${i}`} className="flex items-center justify-between gap-2 py-2">
                 <span className="min-w-0 truncate text-body-s-400 text-[var(--text-strong)]">
                   {m.name}
                   {m.is_me ? ' (나)' : ''}

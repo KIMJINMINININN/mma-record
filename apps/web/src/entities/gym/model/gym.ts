@@ -20,7 +20,8 @@ export const gymNameSchema = z
   .max(GYM_NAME_MAX, `이름은 ${GYM_NAME_MAX}자 이하여야 해요`);
 
 export const gymMemberSchema = z.object({
-  user_id: z.string().uuid(),
+  // user_id는 관장에게만 노출(강퇴용) — 관원 시점에선 null(0028 M4). 키 폴백 필요.
+  user_id: z.string().uuid().nullable(),
   name: z.string(),
   role: z.enum(GYM_ROLES),
   joined_at: isoTimestamp,
@@ -28,11 +29,10 @@ export const gymMemberSchema = z.object({
 });
 export type GymMember = z.infer<typeof gymMemberSchema>;
 
-/** get_my_gym 반환(미소속이면 null). invite_code는 관장에게만 채워진다. */
+/** get_my_gym 반환(미소속이면 null). invite_code는 관장에게만 채워진다(owner_id는 미노출 — is_owner 사용). */
 export const myGymSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  owner_id: z.string().uuid(),
   is_owner: z.boolean(),
   invite_code: z.string().nullable(),
   created_at: isoTimestamp,

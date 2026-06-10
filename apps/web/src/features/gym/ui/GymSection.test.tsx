@@ -41,6 +41,8 @@ vi.mock('@tanstack/react-query', async () => {
         return () => {
           active = false;
         };
+        // queryFn은 매 렌더 새 클로저라 deps에 넣으면 무한루프 — 목 의도상 enabled만 추적.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [enabled]);
       return state;
     },
@@ -60,12 +62,11 @@ function rpcReturnsMyGym(value: unknown) {
 const TS = '2026-06-10T09:30:00+00:00';
 const OWNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const MEMBER = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-const ME = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
+// 관장 시점: user_id 노출(강퇴용). owner_id는 페이로드에서 제거됨(0028 M4 — is_owner만).
 const ownerGym = {
   id: '11111111-1111-4111-8111-111111111111',
   name: '관장님 체육관',
-  owner_id: OWNER,
   is_owner: true,
   invite_code: 'A3F9C2D1',
   created_at: TS,
@@ -75,16 +76,16 @@ const ownerGym = {
   ],
 };
 
+// 관원 시점: user_id는 null(M4 — 관장에게만 노출).
 const memberGym = {
   id: '11111111-1111-4111-8111-111111111111',
   name: '관장님 체육관',
-  owner_id: OWNER,
   is_owner: false,
   invite_code: null,
   created_at: TS,
   members: [
-    { user_id: OWNER, name: '관장', role: 'owner', joined_at: TS, is_me: false },
-    { user_id: ME, name: '나', role: 'member', joined_at: TS, is_me: true },
+    { user_id: null, name: '관장', role: 'owner', joined_at: TS, is_me: false },
+    { user_id: null, name: '나', role: 'member', joined_at: TS, is_me: true },
   ],
 };
 
