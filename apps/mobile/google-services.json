@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "520361861151",
+    "project_id": "matlog-cfe99",
+    "storage_bucket": "matlog-cfe99.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:520361861151:android:5800ecfc224227900c352a",
+        "android_client_info": {
+          "package_name": "com.anonymous.rn_app_dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNFPNBaBc7yyPSXlAvTkCQK6KFrLux7RM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

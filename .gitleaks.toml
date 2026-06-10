@@ -14,9 +14,13 @@ description = "프로젝트 오탐 방지 허용목록"
 # 경로 기반 제외 — 시크릿이 들어올 수 없고, 고엔트로피 오탐만 유발하는 파일만.
 #  · docs/     : 기획 문서 — 예시 env 레이아웃/가짜 토큰 스니펫 포함(차단되면 문서 작성 마찰)
 #  · pnpm-lock : 잠금파일 — 무결성 해시가 고엔트로피 오탐 유발
+#  · google-services.json : Firebase Android 클라이언트 설정. 안의 api_key는 앱 제한키(패키지+SHA,
+#    APK에서 추출 가능)라 진짜 비밀이 아니며 EAS 클라우드 빌드가 git에서 읽어야 해 커밋 필요.
+#    ※ Firebase **어드민 SDK 키**(*-firebase-adminsdk-*.json)는 진짜 비밀 → gitignore + 비-allowlist(차단 유지).
 # ※ .env.example 은 제외하지 않는다(placeholder는 오탐 0으로 검증됨 → 실수로 진짜 키가
 #    박히면 오히려 잡혀야 함). 실제 키 파일 .env.local/.env.test 는 gitignore + 비-allowlist.
 paths = [
   '''(^|/)docs/''',
   '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)google-services\.json$''',
 ]

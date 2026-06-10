@@ -9,6 +9,11 @@
       "distribution": "internal",
       "env": { "EXPO_PUBLIC_APP_ENV": "develop" }
     },
+    "pushtest": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_APP_ENV": "develop" }
+    },
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },

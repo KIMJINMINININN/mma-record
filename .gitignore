@@ -58,3 +58,7 @@ apps/*/android
 .omc/
 **/CLAUDE.md
 .gstack/
+
+# Firebase service account keys (FCM push 발송 비밀키) — 절대 커밋 금지. EAS 업로드 후 로컬 삭제 권장.
+*-firebase-adminsdk-*.json
+**/serviceAccountKey*.json
