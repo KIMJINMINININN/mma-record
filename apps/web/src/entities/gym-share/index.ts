@@ -8,4 +8,11 @@ export {
   type GymShareResourceType,
   type GymFeedItem,
 } from './model/gym-share';
-export { getGymFeed, listMyGymShares, GYM_FEED_KEY, gymSharesKey } from './api/gym-share-queries';
+export {
+  getGymFeed,
+  listMyGymShares,
+  getGymSharedDetail,
+  GYM_FEED_KEY,
+  gymSharesKey,
+  gymSharedDetailKey,
+} from './api/gym-share-queries';

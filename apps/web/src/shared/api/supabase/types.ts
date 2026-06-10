@@ -548,6 +548,22 @@ export type Database = {
         Args: { p_resource_type: string; p_resource_id: string }
         Returns: boolean
       }
+      get_gym_shared_detail: {
+        Args: { p_gym_share_id: string }
+        Returns: Json
+      }
+      get_gym_comments: {
+        Args: { p_gym_share_id: string }
+        Returns: Json
+      }
+      add_gym_comment: {
+        Args: { p_gym_share_id: string; p_body: string }
+        Returns: Json
+      }
+      delete_gym_comment: {
+        Args: { p_comment_id: string }
+        Returns: boolean
+      }
       leave_gym: {
         Args: never
         Returns: boolean

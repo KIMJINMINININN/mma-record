@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
 import { EmptyState } from '@/shared/ui';
@@ -72,20 +73,25 @@ export function GymFeed() {
       ) : (
         <ul className="flex flex-col gap-2">
           {feed.map((item) => (
-            <li key={item.id} className={CARD}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate text-button-m text-[var(--text-strong)]">
-                  {item.title}
-                  {item.missing ? ' · 삭제된 기록' : ''}
-                </span>
-                <span className="shrink-0 rounded-xxs bg-[var(--surface-sunken)] px-2 py-0.5 text-body-xs-400 text-[var(--text-muted)]">
-                  {TYPE_LABEL[item.resource_type]}
-                </span>
-              </div>
-              <p className="mt-1 text-body-xs-400 text-[var(--text-muted)]">
-                {gym.is_owner ? `${item.member_name}` : '나'}
-                {item.subtitle ? ` · ${item.subtitle}` : ''}
-              </p>
+            <li key={item.id}>
+              <Link
+                href={`/gym/feed/${item.id}`}
+                className={`block ${CARD} outline-none transition-colors pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-button-m text-[var(--text-strong)]">
+                    {item.title}
+                    {item.missing ? ' · 삭제된 기록' : ''}
+                  </span>
+                  <span className="shrink-0 rounded-xxs bg-[var(--surface-sunken)] px-2 py-0.5 text-body-xs-400 text-[var(--text-muted)]">
+                    {TYPE_LABEL[item.resource_type]}
+                  </span>
+                </div>
+                <p className="mt-1 text-body-xs-400 text-[var(--text-muted)]">
+                  {gym.is_owner ? `${item.member_name}` : '나'}
+                  {item.subtitle ? ` · ${item.subtitle}` : ''}
+                </p>
+              </Link>
             </li>
           ))}
         </ul>

@@ -8,6 +8,14 @@ import { render, screen, cleanup } from '@testing-library/react';
 const M = vi.hoisted(() => ({ gym: null as unknown, feed: [] as unknown[] }));
 
 vi.mock('@/shared/api/supabase/env', () => ({ isAuthEnabled: () => true }));
+// next/link 는 next 번들의 중첩 react(useContext)를 끌어와 hoisted 모노레포에서 깨진다 → <a> 스텁.
+vi.mock('next/link', async () => {
+  const { createElement } = await import('react');
+  return {
+    default: ({ href, children }: { href: string; children?: import('react').ReactNode }) =>
+      createElement('a', { href }, children),
+  };
+});
 vi.mock('@tanstack/react-query', () => ({
   useQuery: ({ queryKey, enabled = true }: { queryKey: readonly unknown[]; enabled?: boolean }) => {
     if (!enabled) return { data: undefined };

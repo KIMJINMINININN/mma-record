@@ -4,3 +4,4 @@
  */
 export { GymShareToggle } from './ui/GymShareToggle';
 export { GymFeed } from './ui/GymFeed';
+export { GymComments } from './ui/GymComments';
