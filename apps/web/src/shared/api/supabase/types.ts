@@ -508,6 +508,42 @@ export type Database = {
         Args: { p_token: string; p_body: string }
         Returns: Json
       }
+      create_gym: {
+        Args: { p_name: string }
+        Returns: Json
+      }
+      current_user_gym_id: {
+        Args: never
+        Returns: string
+      }
+      delete_gym: {
+        Args: never
+        Returns: boolean
+      }
+      get_gym_by_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: Json
+      }
+      get_my_gym: {
+        Args: never
+        Returns: Json
+      }
+      join_gym: {
+        Args: { p_invite_code: string }
+        Returns: Json
+      }
+      leave_gym: {
+        Args: never
+        Returns: boolean
+      }
+      remove_gym_member: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      rotate_gym_invite_code: {
+        Args: never
+        Returns: string
+      }
       delete_shared_comment: {
         Args: { p_comment_id: string }
         Returns: boolean

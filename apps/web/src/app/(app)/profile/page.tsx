@@ -1,5 +1,6 @@
 import { Button } from '@/shared/ui';
 import { ProfileRankEditor } from '@/features/edit-profile';
+import { GymSection } from '@/features/gym';
 import type { ProfileUpdate, ReminderUpdate } from '@/entities/profile';
 import type { UserRankUpsert } from '@/entities/rank';
 import type { RankTrack } from '@/shared/model/enums';
@@ -112,6 +113,9 @@ export default async function ProfilePage() {
           </Button>
         </form>
       </div>
+
+      {/* 내 체육관 (다인 운영 Phase ① — 생성/초대/가입) — 클라이언트 섬, self-fetch + env 게이팅 */}
+      <GymSection />
 
       {/* 표시명/타임존 + 리마인더 + 종목별 랭크 편집 (클라이언트 섬) — 저장은 도먼시(env 게이팅) */}
       <ProfileRankEditor
