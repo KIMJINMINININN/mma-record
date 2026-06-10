@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -229,7 +230,13 @@ export function GymSection() {
             ))}
           </ul>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              href="/gym/feed"
+              className="text-button-s text-[var(--text-default)] underline underline-offset-2 pointer-hover:text-[var(--text-strong)]"
+            >
+              피드 보기
+            </Link>
             {gym.is_owner ? (
               <Button
                 size="sm"

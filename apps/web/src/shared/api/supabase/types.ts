@@ -532,6 +532,22 @@ export type Database = {
         Args: { p_invite_code: string }
         Returns: Json
       }
+      get_gym_feed: {
+        Args: never
+        Returns: Json
+      }
+      list_my_gym_shares: {
+        Args: { p_resource_type: string }
+        Returns: Json
+      }
+      share_to_gym: {
+        Args: { p_resource_type: string; p_resource_id: string }
+        Returns: boolean
+      }
+      unshare_from_gym: {
+        Args: { p_resource_type: string; p_resource_id: string }
+        Returns: boolean
+      }
       leave_gym: {
         Args: never
         Returns: boolean

@@ -15,6 +15,14 @@ vi.mock('@/shared/api/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({ rpc: m.rpc }),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+// next/link 는 next 번들의 중첩 react(useContext)를 끌어와 hoisted 모노레포에서 깨진다 → <a> 스텁.
+vi.mock('next/link', async () => {
+  const { createElement } = await import('react');
+  return {
+    default: ({ href, children }: { href: string; children?: import('react').ReactNode }) =>
+      createElement('a', { href }, children),
+  };
+});
 vi.mock('@tanstack/react-query', async () => {
   const { useState, useEffect } = await import('react');
   return {

@@ -18,6 +18,10 @@ vi.mock('@/features/session-favorite', () => ({
 vi.mock('@/features/share-session', () => ({
   SessionShareButton: () => null,
 }));
+// GymShareToggle(체육관 공유 토글: useQuery + supabase rpc)도 스텁 — 카드 렌더에 무관.
+vi.mock('@/features/gym-share', () => ({
+  GymShareToggle: () => null,
+}));
 
 import { CalendarWeekView } from './CalendarWeekView';
 import type { SessionWithDisciplines } from '@/entities/session';

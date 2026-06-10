@@ -37,6 +37,7 @@ vi.mock('./TechniqueFavoriteStar', () => ({
 }));
 // TechniqueShareButton 은 createShare('use server') → server-only 체인을 끌어와 jsdom 에서 깨진다 → stub.
 vi.mock('@/features/share-session', () => ({ TechniqueShareButton: () => null }));
+vi.mock('@/features/gym-share', () => ({ GymShareToggle: () => null }));
 // next/link 는 next 번들의 중첩 react(useContext)를 끌어와 hoisted 모노레포에서 깨진다 → <a> 스텁.
 vi.mock('next/link', async () => {
   const { createElement } = await import('react');
