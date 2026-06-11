@@ -14,6 +14,8 @@ import { Providers } from './providers';
  */
 
 export const metadata: Metadata = {
+  // og:image 등 상대 메타 URL의 절대화 기준(단일 배포 prod 도메인) — /share OG 미리보기가 필요로 한다.
+  metadataBase: new URL('https://mma-record-web.vercel.app'),
   title: 'MatLog',
   description: 'MatLog — 주짓수·레슬링·타격·MMA 훈련을 날짜·태그·검색으로 기록하는 개인 훈련 일지.',
 };
