@@ -134,6 +134,7 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string
+          is_admin: boolean
           reminder_days: number[]
           reminder_enabled: boolean
           reminder_time: string
@@ -145,6 +146,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string
+          is_admin?: boolean
           reminder_days?: number[]
           reminder_enabled?: boolean
           reminder_time?: string
@@ -156,6 +158,7 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string
+          is_admin?: boolean
           reminder_days?: number[]
           reminder_enabled?: boolean
           reminder_time?: string
@@ -510,6 +513,10 @@ export type Database = {
       }
       create_gym: {
         Args: { p_name: string }
+        Returns: Json
+      }
+      get_admin_overview: {
+        Args: never
         Returns: Json
       }
       current_user_gym_id: {
