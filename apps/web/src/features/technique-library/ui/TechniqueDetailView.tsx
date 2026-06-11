@@ -200,9 +200,12 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
             <MediaStub />
           )}
 
-          {/* 설명 (Design §7d — 주의점 앞). MarkdownView(F6). 없으면 안내문. */}
+          {/* 설명 (Design §7d — 주의점 앞). MarkdownView(F6). 없으면 안내문 — ??는 빈 문자열('')을
+              못 잡아 공백 화면이 되므로 trim 기준으로 폴백한다(공유 카드와 동일 폴리시). */}
           <h2 className="mb-2 mt-5 text-heading-xs text-[var(--text-strong)]">설명</h2>
-          <MarkdownView source={technique.description_md ?? '설명이 없습니다.'} />
+          <MarkdownView
+            source={technique.description_md?.trim() ? technique.description_md : '설명이 없습니다.'}
+          />
 
           {/* 주의점 빨강 강조 박스 (Design §9.3 / §7d). details_md 있을 때만 렌더. */}
           {technique.details_md && technique.details_md.trim() !== '' && (

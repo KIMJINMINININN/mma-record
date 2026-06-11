@@ -204,7 +204,10 @@ export function TechniqueShareCard({ technique }: { technique: SharedTechniqueRe
 
         <section className="space-y-1">
           <SectionLabel>설명</SectionLabel>
-          <MarkdownView source={technique.description_md ?? '설명이 없습니다.'} />
+          {/* ??는 빈 문자열('')을 못 잡아 공백이 되므로 trim 기준 폴백(상세 뷰와 동일 폴리시). */}
+          <MarkdownView
+            source={technique.description_md?.trim() ? technique.description_md : '설명이 없습니다.'}
+          />
         </section>
 
         {technique.details_md && technique.details_md.trim() !== '' && (

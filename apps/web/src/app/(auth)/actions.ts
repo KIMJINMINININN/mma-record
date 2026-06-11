@@ -35,9 +35,19 @@ const AUTH_DISABLED_MESSAGE =
   '인증은 인프라 연결(NEXT_PUBLIC_AUTH_ENABLED) 후 활성화됩니다.';
 
 /**
- * 로그인 — 성공 시 `/calendar`로 이동.
+ * 로그인 후 복귀 경로 검증 — 내부 단일 '/' 경로만 허용(오픈 리다이렉트 차단).
+ * '//host'(프로토콜 상대)·스킴 포함·외부 URL은 전부 거부하고 null을 반환한다.
+ * (use-webview 푸시 탭 내부경로 검증과 동일 관용구.)
+ */
+function safeNextPath(raw: FormDataEntryValue | null): string | null {
+  if (typeof raw !== 'string') return null;
+  return /^\/(?!\/)/.test(raw) ? raw : null;
+}
+
+/**
+ * 로그인 — 성공 시 `next`(내부 경로, 예: 공유 페이지 복귀)로, 없으면 `/calendar`로 이동.
  * @param _prevState 직전 상태(useActionState 시그니처상 필요, 미사용)
- * @param formData email · password
+ * @param formData email · password · next(선택, hidden)
  */
 export async function login(
   _prevState: AuthActionState,
@@ -66,7 +76,7 @@ export async function login(
   }
 
   revalidatePath('/', 'layout');
-  redirect('/calendar');
+  redirect(safeNextPath(formData.get('next')) ?? '/calendar');
 }
 
 /**

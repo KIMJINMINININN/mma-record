@@ -190,8 +190,9 @@ export function ShareComments({ token }: { token: string }) {
         ) : (
           <p className="text-body-s-400 text-[var(--text-muted)]">
             코멘트를 남기려면 로그인이 필요해요.{' '}
+            {/* next=이 공유 페이지 — 로그인 후 보던 공유로 복귀(액션 safeNextPath가 내부 경로 검증). */}
             <Link
-              href="/login"
+              href={`/login?next=${encodeURIComponent(`/share/${token}`)}`}
               className="text-[var(--primary)] underline underline-offset-2 outline-none focus-visible:shadow-[var(--ring-focus)]"
             >
               로그인하고 코멘트 남기기
