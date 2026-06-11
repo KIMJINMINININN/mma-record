@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 
 import { CalendarMonthGrid } from '@/features/calendar-view';
+import { GymOnboardingCard } from '@/features/gym-onboarding';
 import {
   CalendarAgendaView,
   CalendarWeekView,
@@ -211,6 +212,9 @@ export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
 
   return (
     <div className="mx-auto max-w-6xl">
+      {/* 온보딩: 체육관 미소속이면 참여/생성 안내(소속·닫음이면 null). 캘린더는 막지 않음(1인 일지 유지). */}
+      <GymOnboardingCard />
+
       {/* ── 상단바: 월/주 네비 ‹ 라벨 › + 뷰탭 [월][주][아젠다] + 오늘로 + 세션 (Design §7a) ── */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         {/* 네비 — 기간 뷰(월/주/아젠다)만. 즐겨찾기(cross-month)는 기간 네비 없이 제목만. */}

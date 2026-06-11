@@ -33,6 +33,8 @@ vi.mock('@/shared/model/session-editor-store', () => ({
     selector({ open: m.openEditor }),
 }));
 vi.mock('@/features/calendar-view', () => ({ CalendarMonthGrid: () => null }));
+// 온보딩 카드는 자체 useQuery(['gym',...])를 쓰므로 스크린 테스트에선 stub(분기 검증은 자체 테스트).
+vi.mock('@/features/gym-onboarding', () => ({ GymOnboardingCard: () => null }));
 vi.mock('@/widgets/day-detail', async () => {
   const { createElement } = await import('react');
   return {
