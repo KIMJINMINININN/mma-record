@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -8,6 +9,17 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSecurityModule } from '@/hooks/use-security-module';
 import { useVersionCheck } from '@/hooks/use-version-check';
 import { OfflineBanner } from '@/components/ui/offline-banner';
+
+// 포그라운드에서도 알림 배너를 띄운다(기본값은 포그라운드 미표시) — 코멘트 푸시(0026/0033)·리마인더(0023)가
+// 앱 사용 중에도 보이고, 탭하면 use-webview의 response 리스너가 해당 화면(data.url)으로 이동시킨다.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 export const unstable_settings = {
   anchor: '(tabs)',
