@@ -57,6 +57,20 @@ describe('isNativeBridgeAvailable', () => {
   });
 });
 
+describe('requestNativeCapture — mediaTypes', () => {
+  it('카메라 분리 호출(영상만)이 요청 페이로드에 그대로 실린다', () => {
+    void requestNativeCapture('camera', ['video']);
+    const req = postedOfMode('MEDIA_PICK_REQUEST')!;
+    expect((req.data as { mediaTypes: string[] }).mediaTypes).toEqual(['video']);
+  });
+
+  it('생략하면 기본값(둘 다) — 갤러리 경로 유지', () => {
+    void requestNativeCapture('library');
+    const req = postedOfMode('MEDIA_PICK_REQUEST')!;
+    expect((req.data as { mediaTypes: string[] }).mediaTypes).toEqual(['image', 'video']);
+  });
+});
+
 describe('requestNativeCapture — happy path', () => {
   it('영상: PICK_REQUEST → PICKED → sign-upload(kind=video) → TICKET → DONE → native-upload draft', async () => {
     const signedUrl = 'https://sb.co/storage/v1/object/upload/sign/training-media/u1/videos/abc.mp4?token=tok';

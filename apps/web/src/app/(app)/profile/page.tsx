@@ -1,6 +1,6 @@
-import { Button } from '@/shared/ui';
 import { ProfileRankEditor } from '@/features/edit-profile';
 import { GymSection } from '@/features/gym';
+import { LogoutButton } from '@/features/webview-push';
 import type { ProfileUpdate, ReminderUpdate } from '@/entities/profile';
 import type { UserRankUpsert } from '@/entities/rank';
 import type { RankTrack } from '@/shared/model/enums';
@@ -107,11 +107,8 @@ export default async function ProfilePage() {
             로그인 미연결(인프라 후 활성화)
           </p>
         )}
-        <form action={logout}>
-          <Button type="submit" variant="ghost" size="sm">
-            로그아웃
-          </Button>
-        </form>
+        {/* 로그아웃 직전 이 디바이스 푸시 토큰 해제(0035) — 클라이언트 래퍼가 서버 action을 이어 호출 */}
+        <LogoutButton logoutAction={logout} />
       </div>
 
       {/* 내 체육관 (다인 운영 Phase ① — 생성/초대/가입) — 클라이언트 섬, self-fetch + env 게이팅 */}

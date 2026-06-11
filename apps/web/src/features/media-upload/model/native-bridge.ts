@@ -97,8 +97,15 @@ function cleanup(requestId: string): PendingCapture | undefined {
 /**
  * 네이티브 촬영/갤러리 요청 → 업로드 완료된 native-upload 초안으로 resolve.
  * 취소/실패는 NativeCaptureRejection으로 reject(canceled=true면 조용히 무시).
+ *
+ * mediaTypes: 카메라는 Android 시스템 카메라가 사진/영상 동시 모드를 못 띄우므로 — 둘 다 넘기면
+ * expo가 사진 모드로 열어 영상 녹화가 불가능했다 — 호출부(MediaPicker)가 버튼별로 하나만 지정한다.
+ * 갤러리는 기본(둘 다)이 맞다.
  */
-export function requestNativeCapture(source: MediaSource): Promise<NativeUploadDraft> {
+export function requestNativeCapture(
+  source: MediaSource,
+  mediaTypes: ('image' | 'video')[] = ['image', 'video'],
+): Promise<NativeUploadDraft> {
   if (!isNativeBridgeAvailable()) {
     return Promise.reject({ canceled: false, message: '네이티브 앱에서만 사용할 수 있습니다.' });
   }
@@ -124,7 +131,7 @@ export function requestNativeCapture(source: MediaSource): Promise<NativeUploadD
       data: {
         source,
         requestId,
-        mediaTypes: ['image', 'video'],
+        mediaTypes,
         // maxBytes는 코스(영상 상한)만 힌트로 — 정밀 per-type 검증은 웹이 MEDIA_PICKED에서 수행.
         limits: { maxBytes: UPLOAD_MAX_BYTES, maxDurationSec: UPLOAD_MAX_DURATION_SEC },
       },
@@ -204,7 +211,15 @@ async function onPicked(d: Extract<MediaMessage, { mode: 'MEDIA_PICKED' }>['data
     postToNative({ mode: 'MEDIA_UPLOAD_TICKET', data: { requestId: d.requestId, uploadUrl: signedUrl, mime: d.mime } });
   } catch {
     cleanup(d.requestId);
-    entry.reject({ canceled: false, message: '업로드 준비 중 오류가 발생했습니다.' });
+    // 오프라인이면 fetch가 즉시 던진다 — 일반 오류와 구분해 원인을 정확히 안내한다.
+    // (서명URL 발급 전 단계라 upload-queue 재시도 대상이 아님 — 티켓 단계 큐잉은 오프라인-first 트랙.)
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    entry.reject({
+      canceled: false,
+      message: offline
+        ? '오프라인 상태라 업로드할 수 없습니다. 네트워크 연결 후 다시 시도해 주세요.'
+        : '업로드 준비 중 오류가 발생했습니다.',
+    });
   }
 }
 

@@ -78,6 +78,8 @@ export function createReminderHandlers(_ctx: HandlerContext): Record<string, Mes
               weekday,
               hour: time.hour,
               minute: time.minute,
+              // Android 채널 분리(_layout에서 생성) — 시스템 설정에서 리마인더만 on/off 가능.
+              channelId: 'reminders',
             },
           }),
         ),

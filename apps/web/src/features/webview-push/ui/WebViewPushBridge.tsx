@@ -5,6 +5,8 @@ import { PUSH_TOKEN_MESSAGE_MODES, type PushTokenMessage } from '@the-others/web
 
 import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
 
+import { rememberPushToken } from '../model/push-token-storage';
+
 /**
  * WebViewPushBridge — 서버 푸시 토큰 등록 브리지 (서버 푸시 / 0026_push.sql).
  *
@@ -62,7 +64,12 @@ export function WebViewPushBridge() {
         .rpc('register_push_token', { p_token: data.token, p_platform: data.platform ?? '' })
         .then(
           ({ error }) => {
-            if (error) console.warn('[WebViewPushBridge] register_push_token failed:', error.message);
+            if (error) {
+              console.warn('[WebViewPushBridge] register_push_token failed:', error.message);
+              return;
+            }
+            // 로그아웃 시 해제(0035)를 위해 이 디바이스의 토큰을 보관한다.
+            rememberPushToken(data.token);
           },
           (e: unknown) => console.warn('[WebViewPushBridge] register_push_token threw:', e),
         );

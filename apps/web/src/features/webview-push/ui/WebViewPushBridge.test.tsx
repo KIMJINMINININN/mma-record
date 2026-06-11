@@ -46,7 +46,8 @@ describe('WebViewPushBridge', () => {
     expect(parsed.mode).toBe('PUSH_TOKEN_REQUEST');
   });
 
-  it('PUSH_TOKEN_REGISTER 수신 → register_push_token RPC(토큰/플랫폼 매핑)', async () => {
+  it('PUSH_TOKEN_REGISTER 수신 → register_push_token RPC(토큰/플랫폼 매핑) + 토큰 보관(0035 해제용)', async () => {
+    sessionStorage.removeItem('matlog.push-token');
     render(<WebViewPushBridge />);
     dispatch(
       JSON.stringify({
@@ -60,6 +61,24 @@ describe('WebViewPushBridge', () => {
         p_platform: 'ios',
       }),
     );
+    // 등록 성공 시 로그아웃-해제용으로 sessionStorage에 보관된다.
+    await waitFor(() =>
+      expect(sessionStorage.getItem('matlog.push-token')).toBe('ExponentPushToken[x]'),
+    );
+  });
+
+  it('register_push_token 실패 시 토큰을 보관하지 않는다', async () => {
+    sessionStorage.removeItem('matlog.push-token');
+    m.rpc.mockResolvedValue({ error: { message: 'boom' } });
+    render(<WebViewPushBridge />);
+    dispatch(
+      JSON.stringify({
+        mode: 'PUSH_TOKEN_REGISTER',
+        data: { token: 'ExponentPushToken[y]', platform: 'android' },
+      }),
+    );
+    await waitFor(() => expect(m.rpc).toHaveBeenCalled());
+    expect(sessionStorage.getItem('matlog.push-token')).toBeNull();
   });
 
   it('ReactNativeWebView 없으면 null 렌더 + postMessage/rpc 미호출', () => {

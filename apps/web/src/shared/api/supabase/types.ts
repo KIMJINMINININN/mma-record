@@ -657,6 +657,10 @@ export type Database = {
       seed_starter_techniques: { Args: { p_user: string }; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      unregister_push_token: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
       update_session: {
         Args: {
           p_class_type?: Database["public"]["Enums"]["class_type"]

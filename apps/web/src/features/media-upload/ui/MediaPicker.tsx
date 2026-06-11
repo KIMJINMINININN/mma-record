@@ -215,13 +215,15 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
   }
 
   // ── 네이티브 촬영/갤러리 → 서명URL 직접 업로드 → native-upload 초안(E 트랙) ──
-  async function handleNativeCapture(source: MediaSource) {
+  // 카메라는 사진/영상을 분리 호출한다 — Android 시스템 카메라가 동시 모드를 못 띄워,
+  // 둘 다 넘기면 사진 모드로만 열려 영상 녹화가 불가능했다. 갤러리는 둘 다(기본값).
+  async function handleNativeCapture(source: MediaSource, mediaTypes?: ('image' | 'video')[]) {
     if (atMax) {
       toast.error(`미디어는 최대 ${max}개까지 추가할 수 있습니다.`);
       return;
     }
     try {
-      const draft = await requestNativeCapture(source);
+      const draft = await requestNativeCapture(source, mediaTypes);
       onChange([...valueRef.current, draft]);
     } catch (reason) {
       const r = reason as NativeCaptureRejection;
@@ -246,10 +248,19 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
                 variant="secondary"
                 size="sm"
                 disabled={atMax}
-                onClick={() => handleNativeCapture('camera')}
-                title={atMax ? `최대 ${max}개` : '촬영(카메라)'}
+                onClick={() => handleNativeCapture('camera', ['image'])}
+                title={atMax ? `최대 ${max}개` : '사진 촬영(카메라)'}
               >
-                📷 촬영
+                📷 사진
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={atMax}
+                onClick={() => handleNativeCapture('camera', ['video'])}
+                title={atMax ? `최대 ${max}개` : '영상 녹화(카메라)'}
+              >
+                🎥 영상
               </Button>
               <Button
                 variant="secondary"
