@@ -20,6 +20,8 @@ export const gymFeedItemSchema = z.object({
   shared_at: isoTimestamp,
   title: z.string(),
   subtitle: z.string().nullable(),
+  /** 공유 범위(0038) — coaches/everyone/owner/specific. 라벨 매핑은 entities/gym. 구 페이로드 대비 nullish. */
+  visibility: z.string().nullish(),
   /** 원본(세션/기술)이 삭제됨 → 상세 불가, 목록엔 표시. */
   missing: z.boolean(),
 });

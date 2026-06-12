@@ -568,7 +568,12 @@ export type Database = {
         Returns: Json
       }
       share_to_gym: {
-        Args: { p_resource_type: string; p_resource_id: string }
+        Args: {
+          p_resource_type: string
+          p_resource_id: string
+          p_visibility?: string
+          p_recipient_ids?: string[]
+        }
         Returns: boolean
       }
       unshare_from_gym: {

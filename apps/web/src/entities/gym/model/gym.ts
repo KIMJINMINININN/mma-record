@@ -10,6 +10,22 @@ import { isoTimestamp } from '@/shared/lib/zod';
 export const GYM_ROLES = ['owner', 'coach', 'member'] as const;
 export type GymRole = (typeof GYM_ROLES)[number];
 
+/**
+ * 공유 범위(0038_gym_share_visibility.sql) — 공유할 때 "누가 볼지".
+ *   coaches: 관장+코치(기본) · everyone: 체육관 전원(피어 피드) · owner: 관장만 · specific: 선택한 멤버만.
+ * owner·specific은 진짜 비공개(관장도 모더레이션으로 안 봄).
+ */
+export const GYM_SHARE_VISIBILITIES = ['coaches', 'everyone', 'owner', 'specific'] as const;
+export type GymShareVisibility = (typeof GYM_SHARE_VISIBILITIES)[number];
+
+/** 공유 범위 한글 라벨(드롭다운/피드 배지 공용). */
+export const GYM_SHARE_VISIBILITY_LABEL: Record<GymShareVisibility, string> = {
+  coaches: '관장·코치',
+  everyone: '체육관 전원',
+  owner: '관장만',
+  specific: '특정 멤버',
+};
+
 export const GYM_NAME_MAX = 60;
 
 /** 체육관 이름 입력 검증(테이블 check 1..60과 대칭). */

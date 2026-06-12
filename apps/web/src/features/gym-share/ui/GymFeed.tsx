@@ -5,18 +5,29 @@ import { useQuery } from '@tanstack/react-query';
 
 import { EmptyState } from '@/shared/ui';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
-import { fetchMyGym, GYM_QUERY_KEY } from '@/entities/gym';
+import {
+  fetchMyGym,
+  GYM_QUERY_KEY,
+  GYM_SHARE_VISIBILITY_LABEL,
+  type GymShareVisibility,
+} from '@/entities/gym';
 import { getGymFeed, GYM_FEED_KEY, type GymFeedItem } from '@/entities/gym-share';
 
 /**
- * features/gym-share — 체육관 피드(/gym/feed). 2a: 요약 목록.
- * 관장=체육관 전체 공유 / 관원=본인 공유(서버 get_gym_feed가 분기). 상세·코멘트는 2b/2c.
+ * features/gym-share — 체육관 피드(/gym/feed). 공유 범위(0038)에 따라 볼 수 있는 것만 서버가 거른다:
+ * 내 공유 + (coaches→staff / everyone→전원 / owner→관장 / specific→수신자). 작성자·범위를 항상 표시.
  */
 
 const TYPE_LABEL: Record<GymFeedItem['resource_type'], string> = {
   session: '세션',
   technique: '기술',
 };
+
+/** 내 공유 항목에 범위 배지 라벨(없거나 알 수 없으면 null). */
+function visibilityLabel(v: string | null | undefined): string | null {
+  if (!v) return null;
+  return GYM_SHARE_VISIBILITY_LABEL[v as GymShareVisibility] ?? null;
+}
 
 const CARD = 'rounded-m border border-[var(--border-subtle)] bg-[var(--surface-base)] p-4';
 
@@ -55,7 +66,7 @@ export function GymFeed() {
       <div className="mb-4">
         <h1 className="text-heading-l text-[var(--text-strong)]">{gym.name} · 피드</h1>
         <p className="mt-1 text-body-s-400 text-[var(--text-muted)]">
-          {gym.is_staff ? '관원들이 체육관에 공유한 기록이에요.' : '내가 체육관에 공유한 기록이에요.'}
+          체육관에 공유된 기록이에요. 공유한 사람이 정한 범위에 따라 보여요.
         </p>
       </div>
 
@@ -83,12 +94,20 @@ export function GymFeed() {
                     {item.title}
                     {item.missing ? ' · 삭제된 기록' : ''}
                   </span>
-                  <span className="shrink-0 rounded-xxs bg-[var(--surface-sunken)] px-2 py-0.5 text-body-xs-400 text-[var(--text-muted)]">
-                    {TYPE_LABEL[item.resource_type]}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {/* 내가 올린 공유엔 범위 배지(누구에게 보냈는지 확인용). */}
+                    {item.is_mine && visibilityLabel(item.visibility) ? (
+                      <span className="rounded-xxs bg-[var(--primary-soft)] px-2 py-0.5 text-body-xs-400 text-[var(--primary)]">
+                        {visibilityLabel(item.visibility)}
+                      </span>
+                    ) : null}
+                    <span className="rounded-xxs bg-[var(--surface-sunken)] px-2 py-0.5 text-body-xs-400 text-[var(--text-muted)]">
+                      {TYPE_LABEL[item.resource_type]}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-1 text-body-xs-400 text-[var(--text-muted)]">
-                  {gym.is_owner ? `${item.member_name}` : '나'}
+                  {item.is_mine ? '나' : item.member_name}
                   {item.subtitle ? ` · ${item.subtitle}` : ''}
                 </p>
               </Link>

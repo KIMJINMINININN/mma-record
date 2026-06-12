@@ -4,6 +4,8 @@
  */
 export {
   GYM_ROLES,
+  GYM_SHARE_VISIBILITIES,
+  GYM_SHARE_VISIBILITY_LABEL,
   GYM_NAME_MAX,
   gymNameSchema,
   gymMemberSchema,
@@ -12,6 +14,7 @@ export {
   pendingRequestSchema,
   joinRequestSchema,
   type GymRole,
+  type GymShareVisibility,
   type GymMember,
   type MyGym,
   type GymPreview,
