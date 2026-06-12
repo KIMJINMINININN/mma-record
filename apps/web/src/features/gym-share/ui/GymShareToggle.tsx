@@ -53,7 +53,9 @@ export function GymShareToggle({
   // 미소속 → 토글 미노출(체육관 기능은 소속자 전용).
   if (!authed || !gym) return null;
 
-  const isShared = shared.includes(resourceId);
+  // 내 공유(있으면 현재 범위/수신자 — 변경 프리필용). 0039로 visibility까지 옴.
+  const myShare = shared.find((s) => s.resource_id === resourceId);
+  const isShared = !!myShare;
   // specific 공유 대상 후보 = 나를 뺀 체육관 멤버(user_id 있는 것만 — 타입 좁힘).
   const others = gym.members.filter(
     (m): m is typeof m & { user_id: string } => !m.is_me && m.user_id != null,
@@ -76,6 +78,17 @@ export function GymShareToggle({
     setRecipients(new Set());
   }
 
+  // 공유중 "범위 변경" — 현재 범위/수신자로 프리필하며 패널 펼침.
+  function openForChange() {
+    if (myShare) {
+      setVisibility((GYM_SHARE_VISIBILITIES as readonly string[]).includes(myShare.visibility)
+        ? (myShare.visibility as GymShareVisibility)
+        : 'coaches');
+      setRecipients(new Set(myShare.recipient_ids));
+    }
+    setOpen(true);
+  }
+
   const onShare = () =>
     startTransition(async () => {
       const supabase = createSupabaseBrowserClient();
@@ -89,7 +102,9 @@ export function GymShareToggle({
         toast.error(error.message);
         return;
       }
-      toast.success(`체육관에 공유했어요 · ${GYM_SHARE_VISIBILITY_LABEL[visibility]}`);
+      toast.success(
+        `${isShared ? '공유 범위를 바꿨어요' : '체육관에 공유했어요'} · ${GYM_SHARE_VISIBILITY_LABEL[visibility]}`,
+      );
       resetForm();
       qc.invalidateQueries({ queryKey: gymSharesKey(resourceType) });
       qc.invalidateQueries({ queryKey: GYM_FEED_KEY });
@@ -111,24 +126,34 @@ export function GymShareToggle({
       qc.invalidateQueries({ queryKey: GYM_FEED_KEY });
     });
 
-  // 공유중 — 해제만(범위 변경은 해제 후 재공유).
-  if (isShared) {
+  // 공유중 + 닫힘 — 현재 범위 표시 + 범위 변경 + 해제.
+  if (isShared && !open) {
+    const label = GYM_SHARE_VISIBILITY_LABEL[
+      ((GYM_SHARE_VISIBILITIES as readonly string[]).includes(myShare!.visibility)
+        ? myShare!.visibility
+        : 'coaches') as GymShareVisibility
+    ];
     return (
-      <Button
-        size="sm"
-        variant="secondary"
-        disabled={pending}
-        aria-pressed={true}
-        title="체육관 공유 해제"
-        onClick={onUnshare}
-      >
-        🏠 공유중
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={pending}
+          aria-pressed={true}
+          title="공유 범위 변경"
+          onClick={openForChange}
+        >
+          🏠 공유중 · {label}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={pending} title="체육관 공유 해제" onClick={onUnshare}>
+          해제
+        </Button>
+      </div>
     );
   }
 
   // 미공유 + 닫힘 — 펼치기 버튼.
-  if (!open) {
+  if (!isShared && !open) {
     return (
       <Button size="sm" variant="ghost" title="체육관에 공유" onClick={() => setOpen(true)}>
         🏠 체육관에 공유
@@ -136,7 +161,7 @@ export function GymShareToggle({
     );
   }
 
-  // 미공유 + 열림 — 범위 선택 패널.
+  // 열림 — 범위 선택 패널(미공유=공유 / 공유중=변경 공용).
   return (
     <div className="flex flex-col gap-2 rounded-m border border-[var(--border-subtle)] bg-[var(--surface-base)] p-3">
       <p className="text-body-xs-500 text-[var(--text-default)]">누구에게 공유할까요?</p>
@@ -196,7 +221,7 @@ export function GymShareToggle({
 
       <div className="mt-1 flex gap-2">
         <Button size="sm" variant="primary" disabled={pending || !canSubmit} onClick={onShare}>
-          공유하기
+          {isShared ? '변경하기' : '공유하기'}
         </Button>
         <Button size="sm" variant="ghost" disabled={pending} onClick={resetForm}>
           취소

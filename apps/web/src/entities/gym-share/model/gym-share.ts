@@ -26,3 +26,11 @@ export const gymFeedItemSchema = z.object({
   missing: z.boolean(),
 });
 export type GymFeedItem = z.infer<typeof gymFeedItemSchema>;
+
+/** 내가 공유한 항목(list_my_gym_shares, 0039) — 토글 상태 + 현재 범위/수신자(변경 프리필). */
+export const myGymShareSchema = z.object({
+  resource_id: z.string().uuid(),
+  visibility: z.string(),
+  recipient_ids: z.array(z.string()),
+});
+export type MyGymShare = z.infer<typeof myGymShareSchema>;

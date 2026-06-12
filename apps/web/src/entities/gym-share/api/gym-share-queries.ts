@@ -3,7 +3,9 @@ import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
 import type { SharedResourceEnvelope } from '@/shared/model/shared-resource';
 import {
   gymFeedItemSchema,
+  myGymShareSchema,
   type GymFeedItem,
+  type MyGymShare,
   type GymShareResourceType,
 } from '../model/gym-share';
 
@@ -23,14 +25,14 @@ export async function getGymFeed(): Promise<GymFeedItem[]> {
   return z.array(gymFeedItemSchema).parse(data ?? []);
 }
 
-/** 내가 체육관에 공유한 resource_id 목록(해당 타입) — 토글 상태용. */
-export async function listMyGymShares(resourceType: GymShareResourceType): Promise<string[]> {
+/** 내가 체육관에 공유한 목록(해당 타입) — 토글 상태 + 현재 범위/수신자(범위 변경 프리필용, 0039). */
+export async function listMyGymShares(resourceType: GymShareResourceType): Promise<MyGymShare[]> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase.rpc('list_my_gym_shares', {
     p_resource_type: resourceType,
   });
   if (error) throw error;
-  return z.array(z.string()).parse(data ?? []);
+  return z.array(myGymShareSchema).parse(data ?? []);
 }
 
 /** 공유 상세 쿼리 키(2b). */

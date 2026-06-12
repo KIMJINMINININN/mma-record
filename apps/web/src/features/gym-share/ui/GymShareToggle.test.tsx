@@ -6,7 +6,10 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react';
  * GymShareToggle — 미소속 미노출 / 미공유→범위 선택 펼침 / 공유중→해제.
  * useQuery를 queryKey 분기 canned 목으로(queryFn 미실행 — calendar-screen.test 관용구).
  */
-const M = vi.hoisted(() => ({ gym: null as unknown, shared: [] as string[] }));
+const M = vi.hoisted(() => ({
+  gym: null as unknown,
+  shared: [] as Array<{ resource_id: string; visibility: string; recipient_ids: string[] }>,
+}));
 
 vi.mock('@/shared/api/supabase/env', () => ({ isAuthEnabled: () => true }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -59,12 +62,24 @@ describe('GymShareToggle', () => {
     expect(screen.getByRole('button', { name: /체육관에 공유/ })).toBeInTheDocument();
   });
 
-  it('소속 + 공유됨 → "공유중"(aria-pressed=true)', () => {
+  it('소속 + 공유됨 → "공유중 · 범위" + 해제', () => {
     M.gym = GYM;
-    M.shared = [RID];
+    M.shared = [{ resource_id: RID, visibility: 'everyone', recipient_ids: [] }];
     render(<GymShareToggle resourceType="session" resourceId={RID} />);
-    const btn = screen.getByRole('button', { name: /공유중/ });
+    // 현재 범위 라벨이 버튼에 표시(체육관 전원).
+    const btn = screen.getByRole('button', { name: /공유중.*체육관 전원/ });
     expect(btn).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '해제' })).toBeInTheDocument();
+  });
+
+  it('공유중 "범위 변경" 클릭 → 현재 범위로 프리필된 패널(변경하기 버튼)', () => {
+    M.gym = GYM;
+    M.shared = [{ resource_id: RID, visibility: 'owner', recipient_ids: [] }];
+    render(<GymShareToggle resourceType="session" resourceId={RID} />);
+    fireEvent.click(screen.getByRole('button', { name: /공유중/ }));
+    // 현재 범위(관장만)가 선택된 상태로 펼쳐짐.
+    expect(screen.getByRole('radio', { name: '관장만' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('button', { name: '변경하기' })).toBeInTheDocument();
   });
 
   it('미공유 클릭 → 범위 4종 라디오 펼침', () => {

@@ -5,8 +5,10 @@
 export {
   GYM_SHARE_RESOURCE_TYPES,
   gymFeedItemSchema,
+  myGymShareSchema,
   type GymShareResourceType,
   type GymFeedItem,
+  type MyGymShare,
 } from './model/gym-share';
 export {
   getGymFeed,
