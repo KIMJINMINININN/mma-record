@@ -42,12 +42,22 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('GymOnboardingCard', () => {
-  it('미소속: 참여·만들기·나중에 노출', () => {
+  it('미소속: 참여가 메인 + 만들기는 디스클로저 + 나중에 노출', () => {
     render(<GymOnboardingCard />);
     expect(screen.getByText('체육관과 함께 쓰면 더 좋아요')).toBeTruthy();
+    // 참여는 항상 메인으로 노출.
     expect(screen.getByLabelText('초대코드로 참여')).toBeTruthy();
-    expect(screen.getByLabelText('또는 체육관 만들기')).toBeTruthy();
     expect(screen.getByText('나중에')).toBeTruthy();
+    // 만들기는 기본 접힘 — 입력은 숨고 디스클로저 버튼만 보인다.
+    expect(screen.queryByLabelText('체육관 이름')).toBeNull();
+    expect(screen.getByText('관장이신가요? 체육관 개설하기')).toBeTruthy();
+  });
+
+  it('미소속: "관장이신가요?" 클릭 → 체육관 이름 입력 노출', () => {
+    render(<GymOnboardingCard />);
+    fireEvent.click(screen.getByText('관장이신가요? 체육관 개설하기'));
+    expect(screen.getByLabelText('체육관 이름')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '개설' })).toBeTruthy();
   });
 
   it('이미 소속: 렌더 안 함(null)', () => {

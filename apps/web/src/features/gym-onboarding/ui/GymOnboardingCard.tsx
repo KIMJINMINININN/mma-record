@@ -67,6 +67,8 @@ export function GymOnboardingCard() {
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  // 만들기는 보조 경로(관장만) — 기본 접힘. 대다수(관원)는 "참여"가 메인이라, 코드 없이 잘못 만드는 중복 체육관을 줄인다.
+  const [showCreate, setShowCreate] = useState(false);
   const [busy, startTransition] = useTransition();
   const sb = () => createSupabaseBrowserClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: ['gym'] });
@@ -132,52 +134,63 @@ export function GymOnboardingCard() {
         체육관과 함께 쓰면 더 좋아요
       </p>
       <p className="mt-1 text-body-s-400 text-[var(--text-muted)]">
-        코치에게 피드백을 받고 기록을 공유할 수 있어요. 혼자 기록하셔도 캘린더는 그대로 사용할 수 있습니다.
+        코치에게 피드백을 받고 기록을 공유할 수 있어요. 초대코드를 받으셨다면 참여해 보세요. 혼자
+        기록하셔도 캘린더는 그대로 사용할 수 있습니다.
       </p>
 
-      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
-        {/* 초대받은 사람: 초대코드로 참여(승인제) */}
-        <div className="flex min-w-0 flex-1 items-end gap-2">
-          <Input
-            label="초대코드로 참여"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="초대코드 입력"
-            wrapperClassName="min-w-0 flex-1"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={busy || code.trim() === ''}
-            onClick={() =>
-              run(
-                () => sb().rpc('request_join_gym', { p_invite_code: code.trim() }),
-                '가입을 요청했어요. 관장님 승인을 기다려 주세요.',
-              )
-            }
-          >
-            참여
-          </Button>
-        </div>
+      {/* 메인: 초대받은 사람의 참여(승인제) — 대다수 사용자의 경로라 가장 강조한다. */}
+      <div className="mt-4 flex items-end gap-2">
+        <Input
+          label="초대코드로 참여"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="초대코드 입력"
+          wrapperClassName="min-w-0 flex-1"
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={busy || code.trim() === ''}
+          onClick={() =>
+            run(
+              () => sb().rpc('request_join_gym', { p_invite_code: code.trim() }),
+              '가입을 요청했어요. 관장님 승인을 기다려 주세요.',
+            )
+          }
+        >
+          참여
+        </Button>
+      </div>
 
-        {/* 관장: 체육관 만들기 */}
-        <div className="flex min-w-0 flex-1 items-end gap-2">
-          <Input
-            label="또는 체육관 만들기"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="체육관 이름"
-            wrapperClassName="min-w-0 flex-1"
-          />
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={busy || name.trim() === ''}
-            onClick={() => run(() => sb().rpc('create_gym', { p_name: name.trim() }), '체육관을 만들었어요!')}
+      {/* 보조: 관장 체육관 개설 — 기본 접힘(디스클로저). 관장만 펼쳐 쓰도록 유도해 중복 생성을 줄인다. */}
+      <div className="mt-3 border-t border-[var(--border-subtle)] pt-3">
+        {!showCreate ? (
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="text-body-s-400 text-[var(--text-muted)] underline underline-offset-2 outline-none pointer-hover:text-[var(--text-default)] focus-visible:shadow-[var(--ring-focus)]"
           >
-            만들기
-          </Button>
-        </div>
+            관장이신가요? 체육관 개설하기
+          </button>
+        ) : (
+          <div className="flex items-end gap-2">
+            <Input
+              label="체육관 이름"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="우리 체육관 이름"
+              wrapperClassName="min-w-0 flex-1"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={busy || name.trim() === ''}
+              onClick={() => run(() => sb().rpc('create_gym', { p_name: name.trim() }), '체육관을 만들었어요!')}
+            >
+              개설
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
