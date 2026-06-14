@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 
 /**
  * GymSection 섬 테스트 — 미소속/관장/관원 3분기 렌더.
@@ -111,11 +111,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('GymSection', () => {
-  it('미소속 → 생성·가입 폼', async () => {
+  it('미소속 → 가입이 메인, 개설은 디스클로저 뒤', async () => {
     setupRpc();
     render(<GymSection />);
-    expect(await screen.findByRole('button', { name: '체육관 만들기' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '가입하기' })).toBeInTheDocument();
+    // 가입(참여)은 메인으로 항상 노출.
+    expect(await screen.findByRole('button', { name: '가입하기' })).toBeInTheDocument();
+    // 개설은 기본 접힘 — 폼은 숨고 디스클로저 버튼만 보인다.
+    expect(screen.queryByRole('button', { name: '체육관 개설' })).toBeNull();
+    expect(screen.getByText('관장이신가요? 체육관 개설하기')).toBeInTheDocument();
+    // 클릭하면 개설 폼이 펼쳐진다.
+    fireEvent.click(screen.getByText('관장이신가요? 체육관 개설하기'));
+    expect(screen.getByRole('button', { name: '체육관 개설' })).toBeInTheDocument();
   });
 
   it('미소속 + 대기 요청 → "요청 대기 중" + 취소', async () => {
@@ -123,8 +129,9 @@ describe('GymSection', () => {
     render(<GymSection />);
     expect(await screen.findByText(/가입 요청 대기 중/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '요청 취소' })).toBeInTheDocument();
-    // 대기 중엔 생성/가입 폼 미노출
-    expect(screen.queryByRole('button', { name: '체육관 만들기' })).toBeNull();
+    // 대기 중엔 가입/개설 폼·디스클로저 미노출
+    expect(screen.queryByRole('button', { name: '가입하기' })).toBeNull();
+    expect(screen.queryByText('관장이신가요? 체육관 개설하기')).toBeNull();
   });
 
   it('관장 → 초대코드·명단·삭제·내보내기·코치 지정', async () => {

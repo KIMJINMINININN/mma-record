@@ -59,6 +59,8 @@ export function GymSection() {
 
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  // 개설은 보조 경로(관장만) — 기본 접힘. 가입(참여)을 메인으로 둬 중복 체육관 생성을 줄인다.
+  const [showCreate, setShowCreate] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const sb = () => createSupabaseBrowserClient();
@@ -125,6 +127,17 @@ export function GymSection() {
     }
   };
 
+  // 초대 링크 복사 — 관원이 탭 한 번으로 /join/<code> 착지(초대 퍼널 ②). origin은 prod·로컬·앱 WebView 공통.
+  const onCopyLink = async () => {
+    if (!gym?.invite_code) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/join/${gym.invite_code}`);
+      toast.success('초대 링크를 복사했어요');
+    } catch {
+      toast.error('복사에 실패했어요');
+    }
+  };
+
   const onRotate = () => {
     if (!window.confirm('초대코드를 새로 발급할까요? 기존 코드는 더 이상 쓸 수 없어요.')) return;
     run(() => sb().rpc('rotate_gym_invite_code'), '새 초대코드를 발급했어요');
@@ -179,37 +192,13 @@ export function GymSection() {
             </Button>
           </div>
         ) : (
-        // ── 미소속: 생성 + 가입 ──────────────────────────────
+        // ── 미소속: 가입(메인) + 개설(관장 디스클로저) ───────────
         <div>
           <p className="mb-4 text-body-xs-400 text-[var(--text-muted)]">
-            체육관을 만들어 관원을 초대하거나, 초대코드로 가입하세요.
+            초대코드로 체육관에 가입하세요. 직접 운영하는 관장이라면 새 체육관을 개설할 수 있어요.
           </p>
 
-          <div className="mb-4">
-            <Input
-              label="새 체육관 만들기"
-              placeholder="체육관 이름"
-              value={name}
-              maxLength={GYM_NAME_MAX}
-              disabled={pending}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Button
-              className="mt-2"
-              block
-              disabled={pending || name.trim().length === 0}
-              onClick={onCreate}
-            >
-              체육관 만들기
-            </Button>
-          </div>
-
-          <div className="my-3 flex items-center gap-2 text-body-xs-400 text-[var(--text-muted)]">
-            <span className="h-px flex-1 bg-[var(--border-subtle)]" />
-            또는
-            <span className="h-px flex-1 bg-[var(--border-subtle)]" />
-          </div>
-
+          {/* 메인: 초대코드 가입(승인제) */}
           <div>
             <Input
               label="초대코드로 가입"
@@ -220,13 +209,45 @@ export function GymSection() {
             />
             <Button
               className="mt-2"
-              variant="secondary"
               block
               disabled={pending || code.trim().length === 0}
               onClick={onJoin}
             >
               가입하기
             </Button>
+          </div>
+
+          {/* 보조: 관장 체육관 개설 — 기본 접힘(디스클로저). */}
+          <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
+            {!showCreate ? (
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                className="text-body-s-400 text-[var(--text-muted)] underline underline-offset-2 outline-none pointer-hover:text-[var(--text-default)] focus-visible:shadow-[var(--ring-focus)]"
+              >
+                관장이신가요? 체육관 개설하기
+              </button>
+            ) : (
+              <div>
+                <Input
+                  label="체육관 이름"
+                  placeholder="우리 체육관 이름"
+                  value={name}
+                  maxLength={GYM_NAME_MAX}
+                  disabled={pending}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <Button
+                  className="mt-2"
+                  variant="secondary"
+                  block
+                  disabled={pending || name.trim().length === 0}
+                  onClick={onCreate}
+                >
+                  체육관 개설
+                </Button>
+              </div>
+            )}
           </div>
         </div>
         )
@@ -242,14 +263,20 @@ export function GymSection() {
 
           {gym.is_owner && gym.invite_code ? (
             <div className="mb-3 rounded-m border border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-3">
-              <p className="mb-1 text-body-xs-400 text-[var(--text-muted)]">초대코드</p>
-              <div className="flex items-center justify-between gap-2">
-                <code className="text-button-m tracking-widest text-[var(--text-strong)]">
+              <p className="mb-1 text-body-xs-400 text-[var(--text-muted)]">초대 링크</p>
+              <p className="mb-2 text-body-xs-400 text-[var(--text-muted)]">
+                링크를 공유하면 관원이 탭 한 번으로 가입을 요청할 수 있어요.
+              </p>
+              <Button block size="sm" disabled={pending} onClick={onCopyLink}>
+                초대 링크 복사
+              </Button>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <code className="text-button-s tracking-widest text-[var(--text-strong)]">
                   {gym.invite_code}
                 </code>
                 <div className="flex gap-1.5">
                   <Button size="sm" variant="secondary" disabled={pending} onClick={onCopyCode}>
-                    복사
+                    코드 복사
                   </Button>
                   <Button size="sm" variant="ghost" disabled={pending} onClick={onRotate}>
                     재발급
