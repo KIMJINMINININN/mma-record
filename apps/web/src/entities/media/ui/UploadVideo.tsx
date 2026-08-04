@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { fetchSignedMediaUrl, SIGNED_URL_TTL_SEC } from '../api/media-queries';
+import { uploadResumeKey } from '../model/playback-progress';
 import { VideoPlayer } from './VideoPlayer';
 
 /**
@@ -13,6 +14,9 @@ import { VideoPlayer } from './VideoPlayer';
  * 목록 쿼리가 모든 영상의 서명 URL을 미리 만들지 않도록 표시 시점으로 미룬다.
  * staleTime을 TTL보다 짧게 둬 만료 전 동일 path 재사용 + 만료 시 자동 재발급.
  * AUTH OFF면 비활성(미디어 자체가 인프라 후 생성) → 안내 placeholder.
+ *
+ * 이어보기 키는 서명 URL이 아닌 불변 storage_path 기준([[uploadResumeKey]]) —
+ * URL은 10분마다 갈리므로 키로 쓰면 매번 새 영상이 된다.
  */
 export interface UploadVideoProps {
   storagePath: string;
@@ -49,5 +53,12 @@ export function UploadVideo({ storagePath, thumbnailPath, className }: UploadVid
 
   if (isError) return <Frame>영상을 불러올 수 없습니다</Frame>;
   if (!src) return <Frame>영상 불러오는 중…</Frame>;
-  return <VideoPlayer src={src} poster={poster ?? null} className={className} />;
+  return (
+    <VideoPlayer
+      src={src}
+      poster={poster ?? null}
+      resumeKey={uploadResumeKey(storagePath)}
+      className={className}
+    />
+  );
 }

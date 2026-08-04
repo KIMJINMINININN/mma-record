@@ -1,4 +1,5 @@
 export * from './model/media';
+export * from './model/playback-progress';
 export * from './lib/youtube';
 export * from './lib/url';
 export * from './ui/YoutubeEmbed';
